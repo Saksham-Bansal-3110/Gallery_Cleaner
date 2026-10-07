@@ -42,6 +42,17 @@ struct HomeView: View {
                         Text("Please allow photo library access in Settings.")
                             .foregroundColor(.gray)
                     }
+                } else if viewModel.scanState == .completed && viewModel.allItems.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 64))
+                            .foregroundColor(.gray)
+                        Text("No Media Found")
+                            .font(.title)
+                            .foregroundColor(.white)
+                        Text("Your photo library appears to be empty.")
+                            .foregroundColor(.gray)
+                    }
                 } else {
                     mainContentView
                 }
@@ -139,7 +150,7 @@ struct HomeView: View {
                 
                 CategoryCard(
                     title: "Duplicate Photos",
-                    itemsCount: viewModel.duplicatePhotos.reduce(0) { $0 + $1.items.count },
+                    itemsCount: Set(viewModel.duplicatePhotos.flatMap { $0.items }).count,
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicatePhotos)),
                     items: viewModel.duplicatePhotos.flatMap { $0.items }
                 ) {
@@ -148,7 +159,7 @@ struct HomeView: View {
                 
                 CategoryCard(
                     title: "Similar Photos",
-                    itemsCount: viewModel.similarPhotos.reduce(0) { $0 + $1.items.count },
+                    itemsCount: Set(viewModel.similarPhotos.flatMap { $0.items }).count,
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.similarPhotos)),
                     items: viewModel.similarPhotos.flatMap { $0.items }
                 ) {
@@ -157,7 +168,7 @@ struct HomeView: View {
                 
                 CategoryCard(
                     title: "Duplicate Videos",
-                    itemsCount: viewModel.duplicateVideos.reduce(0) { $0 + $1.items.count },
+                    itemsCount: Set(viewModel.duplicateVideos.flatMap { $0.items }).count,
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicateVideos)),
                     items: viewModel.duplicateVideos.flatMap { $0.items }
                 ) {

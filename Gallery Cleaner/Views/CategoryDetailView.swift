@@ -33,6 +33,10 @@ struct CategoryDetailView: View {
         allItemIDs.count
     }
     
+    @EnvironmentObject var viewModel: GalleryViewModel
+    @State private var showDeleteConfirmation = false
+    @State private var deleteError: String? = nil
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -65,6 +69,14 @@ struct CategoryDetailView: View {
                     } else {
                         Button(action: {
                             isSelectionMode = true
+                            if case .grouped(let groups) = displayStyle {
+                                for group in groups {
+                                    let itemsToSelect = group.items.dropFirst()
+                                    for item in itemsToSelect {
+                                        selectedItems.insert(item.id)
+                                    }
+                                }
+                            }
                         }) {
                             Text("Select")
                                 .font(.system(size: 16, weight: .medium))
@@ -185,11 +197,6 @@ struct CategoryDetailView: View {
                 }
             }
             
-            // X / Back button functionality - Mockup usually has back button when not in selection mode?
-            // "The X/close control should exit selection mode or return to the previous screen depending on the current screen state."
-            // We have the X button in the top right for exiting selection mode, which is already handled above. 
-            // The back button is native on NavigationStack, but since we use .navigationBarHidden(true), we should add a custom back button if not in selection mode, or keep it simple.
-            
             VStack {
                 HStack {
                     if !isSelectionMode {
@@ -209,17 +216,59 @@ struct CategoryDetailView: View {
                 VStack {
                     Spacer()
                     SelectionToolbar(onSelectAll: {
-                        if selectedItems.count == allItemIDs.count {
+                        let targetIDs: Set<String>
+                        if case .grouped(let groups) = displayStyle {
+                            let safeIDs = groups.flatMap { $0.items.dropFirst() }.map { $0.id }
+                            targetIDs = Set(safeIDs)
+                        } else {
+                            targetIDs = allItemIDs
+                        }
+                        
+                        if selectedItems == targetIDs || selectedItems.count == allItemIDs.count {
                             selectedItems.removeAll()
                         } else {
-                            selectedItems = allItemIDs
+                            selectedItems = targetIDs
                         }
                     }, onDelete: {
-                        // Delete action
+                        if !selectedItems.isEmpty {
+                            showDeleteConfirmation = true
+                        }
                     })
                 }
             }
         }
         .navigationBarHidden(true)
+        .confirmationDialog(
+            "Delete \(selectedItems.count) item(s)?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                deleteSelectedItems()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("These items will be permanently deleted from your Photo Library.")
+        }
+        .alert("Error", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "")
+        }
+    }
+    
+    private func deleteSelectedItems() {
+        Task {
+            do {
+                try await viewModel.deleteItems(withIDs: selectedItems)
+                selectedItems.removeAll()
+                isSelectionMode = false
+                if allItemIDs.isEmpty {
+                    dismiss()
+                }
+            } catch {
+                deleteError = error.localizedDescription
+            }
+        }
     }
 }

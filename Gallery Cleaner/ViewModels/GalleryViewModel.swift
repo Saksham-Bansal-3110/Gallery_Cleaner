@@ -80,9 +80,8 @@ class GalleryViewModel: ObservableObject {
     }
     
     func totalSize(for groups: [DuplicateGroup]) -> Int64 {
-        return groups.reduce(0) { sum, group in
-            sum + totalSize(for: group.items)
-        }
+        let uniqueItems = Set(groups.flatMap { $0.items })
+        return uniqueItems.reduce(0) { $0 + $1.sizeInBytes }
     }
     
     func formatSize(_ size: Int64) -> String {
@@ -90,5 +89,34 @@ class GalleryViewModel: ObservableObject {
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: size)
+    }
+    
+    func deleteItems(withIDs ids: Set<String>) async throws {
+        let itemsToDelete = allItems.filter { ids.contains($0.id) }
+        guard !itemsToDelete.isEmpty else { return }
+        
+        try await photoLibraryService.deleteMedia(items: itemsToDelete)
+        
+        // On success, update UI state by removing the deleted items
+        self.allItems.removeAll { ids.contains($0.id) }
+        
+        let screenshotScanner = ScreenshotScanner()
+        self.screenshots = screenshotScanner.scanScreenshots(from: allItems)
+        
+        let videoScanner = VideoScanner()
+        self.videos = videoScanner.scanVideos(from: allItems)
+        
+        self.largeVideos = self.videos
+            .filter { $0.sizeInBytes >= AppConfig.largeVideoThreshold }
+            .sorted { $0.sizeInBytes > $1.sizeInBytes }
+        
+        let duplicateScanner = DuplicatePhotoScanner()
+        self.duplicatePhotos = await duplicateScanner.scanDuplicates(from: allItems)
+        
+        let duplicateVideoScanner = DuplicateVideoScanner()
+        self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: allItems)
+        
+        let similarScanner = SimilarPhotoScanner()
+        self.similarPhotos = await similarScanner.scanSimilarPhotos(from: allItems)
     }
 }

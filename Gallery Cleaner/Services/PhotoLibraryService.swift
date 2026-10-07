@@ -12,6 +12,7 @@ public protocol PhotoLibraryService {
     func fetchAllMedia() -> AsyncStream<([MediaItem], Double)>
     func requestThumbnail(for item: MediaItem, targetSize: CGSize, completion: @escaping (UIImage?) -> Void) -> PHImageRequestID
     func cancelThumbnailRequest(_ requestID: PHImageRequestID)
+    func deleteMedia(items: [MediaItem]) async throws
 }
 
 class PhotoLibraryManager: PhotoLibraryService {
@@ -82,6 +83,13 @@ class PhotoLibraryManager: PhotoLibraryService {
     func cancelThumbnailRequest(_ requestID: PHImageRequestID) {
         imageManager.cancelImageRequest(requestID)
     }
+    
+    func deleteMedia(items: [MediaItem]) async throws {
+        let assets = items.map { $0.asset }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.deleteAssets(assets as NSArray)
+        }
+    }
 }
 
 class MockPhotoLibraryService: PhotoLibraryService {
@@ -102,4 +110,6 @@ class MockPhotoLibraryService: PhotoLibraryService {
     }
     
     func cancelThumbnailRequest(_ requestID: PHImageRequestID) {}
+    
+    func deleteMedia(items: [MediaItem]) async throws {}
 }
