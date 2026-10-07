@@ -92,24 +92,3 @@ class PhotoLibraryManager: PhotoLibraryService {
     }
 }
 
-class MockPhotoLibraryService: PhotoLibraryService {
-    func requestAuthorization() async -> PHAuthorizationStatus {
-        return .authorized
-    }
-    
-    func fetchAllMedia() -> AsyncStream<([MediaItem], Double)> {
-        AsyncStream { continuation in
-            continuation.yield(([], 1.0))
-            continuation.finish()
-        }
-    }
-    
-    func requestThumbnail(for item: MediaItem, targetSize: CGSize, completion: @escaping (UIImage?) -> Void) -> PHImageRequestID {
-        completion(nil)
-        return 0
-    }
-    
-    func cancelThumbnailRequest(_ requestID: PHImageRequestID) {}
-    
-    func deleteMedia(items: [MediaItem]) async throws {}
-}

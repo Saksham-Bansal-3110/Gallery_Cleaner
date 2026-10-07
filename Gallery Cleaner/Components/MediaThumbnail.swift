@@ -40,7 +40,7 @@ struct MediaThumbnail: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(Color.white.opacity(0.3))
+                        .background(Color.black.opacity(0.78))
                         .clipShape(Capsule())
                     Spacer()
                 }
@@ -51,10 +51,10 @@ struct MediaThumbnail: View {
                         Text(duration)
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(Color.black.opacity(0.6))
-                            .cornerRadius(4)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.black.opacity(0.78))
+                            .clipShape(Capsule())
                     }
                 }
             }

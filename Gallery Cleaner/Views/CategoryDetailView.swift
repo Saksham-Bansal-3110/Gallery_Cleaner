@@ -7,12 +7,23 @@ import SwiftUI
 
 struct CategoryDetailView: View {
     var title: String
-    var displayStyle: CategoryDisplayStyle
-    var totalSize: String
+    var categoryType: CategoryType
     
+    @EnvironmentObject var viewModel: GalleryViewModel
     @Environment(\.dismiss) var dismiss
     @State private var isSelectionMode = false
     @State private var selectedItems: Set<String> = []
+    
+    var displayStyle: CategoryDisplayStyle {
+        switch categoryType {
+        case .screenshots: return .grid(items: viewModel.screenshots)
+        case .videos: return .grid(items: viewModel.videos)
+        case .duplicatePhotos: return .grouped(groups: viewModel.duplicatePhotos)
+        case .similarPhotos: return .grouped(groups: viewModel.similarPhotos)
+        case .duplicateVideos: return .grouped(groups: viewModel.duplicateVideos)
+        case .largeVideos: return .list(items: viewModel.largeVideos)
+        }
+    }
     
     let columns = [
         GridItem(.flexible(), spacing: 8),
@@ -29,69 +40,38 @@ struct CategoryDetailView: View {
         }
     }
     
+    var allItemsList: [MediaItem] {
+        switch displayStyle {
+        case .grid(let items), .list(let items):
+            return items
+        case .grouped(let groups):
+            return groups.flatMap { $0.items }
+        }
+    }
+    
     var itemsCount: Int {
         allItemIDs.count
     }
     
-    @EnvironmentObject var viewModel: GalleryViewModel
+    var selectedMediaItems: [MediaItem] {
+        let uniqueItems = Set(allItemsList)
+        return Array(uniqueItems.filter { selectedItems.contains($0.id) })
+    }
+    
+    var itemsCountText: String {
+        let size = viewModel.totalSize(for: Array(Set(allItemsList)))
+        return "\(itemsCount) Items • \(viewModel.formatSize(size))"
+    }
+    
     @State private var showDeleteConfirmation = false
     @State private var deleteError: String? = nil
+    @State private var isDeleting = false
     
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(title)
-                            .font(.system(size: 34, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("\(itemsCount) Items • \(totalSize)")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(white: 0.6))
-                    }
-                    Spacer()
-                    
-                    if isSelectionMode {
-                        Button(action: {
-                            isSelectionMode = false
-                            selectedItems.removeAll()
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(12)
-                                .background(Color(white: 0.4))
-                                .clipShape(Circle())
-                        }
-                    } else {
-                        Button(action: {
-                            isSelectionMode = true
-                            if case .grouped(let groups) = displayStyle {
-                                for group in groups {
-                                    let itemsToSelect = group.items.dropFirst()
-                                    for item in itemsToSelect {
-                                        selectedItems.insert(item.id)
-                                    }
-                                }
-                            }
-                        }) {
-                            Text("Select")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(Color(white: 0.4))
-                                .clipShape(Capsule())
-                        }
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-                
                 if itemsCount == 0 {
                     Spacer()
                     Text("No Items")
@@ -99,6 +79,12 @@ struct CategoryDetailView: View {
                     Spacer()
                 } else {
                     ScrollView {
+                        VStack {
+                            Text(itemsCountText)
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(white: 0.6))
+                                .padding(.vertical, 8)
+                        }
                         switch displayStyle {
                         case .grid(let items):
                             LazyVGrid(columns: columns, spacing: 8) {
@@ -108,7 +94,7 @@ struct CategoryDetailView: View {
                                         isSelected: selectedItems.contains(item.id),
                                         isSelectionMode: isSelectionMode
                                     ) {
-                                        if isSelectionMode {
+                                        if isSelectionMode && !isDeleting {
                                             if selectedItems.contains(item.id) {
                                                 selectedItems.remove(item.id)
                                             } else {
@@ -117,10 +103,11 @@ struct CategoryDetailView: View {
                                         }
                                     }
                                     .aspectRatio(1, contentMode: .fit)
+                                    .opacity(isDeleting ? 0.5 : 1.0)
                                 }
                             }
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 100)
+                            
                             
                         case .list(let items):
                             LazyVStack(spacing: 12) {
@@ -143,6 +130,7 @@ struct CategoryDetailView: View {
                                                             .frame(width: 18, height: 18)
                                                     )
                                             }
+                                            .disabled(isDeleting)
                                         }
                                         
                                         MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
@@ -176,9 +164,10 @@ struct CategoryDetailView: View {
                                     .background(Color(white: 0.12))
                                     .cornerRadius(12)
                                     .padding(.horizontal, 16)
+                                    .opacity(isDeleting ? 0.5 : 1.0)
                                 }
                             }
-                            .padding(.bottom, 100)
+                            
                             
                         case .grouped(let groups):
                             LazyVStack(spacing: 16) {
@@ -188,56 +177,86 @@ struct CategoryDetailView: View {
                                         selectedItems: $selectedItems,
                                         isSelectionMode: isSelectionMode
                                     )
+                                    .opacity(isDeleting ? 0.5 : 1.0)
+                                    .disabled(isDeleting)
                                 }
                             }
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 100)
+                            
+                        }
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        if isSelectionMode {
+                            VStack(spacing: 8) {
+                                Text("\(selectedItems.count) Selected • \(viewModel.formatSize(viewModel.totalSize(for: selectedMediaItems)))")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.top, 12)
+                                
+                                SelectionToolbar(onSelectAll: {
+                                    let targetIDs: Set<String>
+                                    if case .grouped(let groups) = displayStyle, categoryType != .similarPhotos {
+                                        let safeIDs = groups.flatMap { $0.items.dropFirst() }.map { $0.id }
+                                        targetIDs = Set(safeIDs)
+                                    } else {
+                                        targetIDs = allItemIDs
+                                    }
+                                    
+                                    if selectedItems == targetIDs || selectedItems.count == allItemIDs.count {
+                                        selectedItems.removeAll()
+                                    } else {
+                                        selectedItems = targetIDs
+                                    }
+                                }, onDelete: {
+                                    if !selectedItems.isEmpty {
+                                        showDeleteConfirmation = true
+                                    }
+                                })
+                                .disabled(isDeleting)
+                            }
+                            .background(Color.black.opacity(0.95))
                         }
                     }
                 }
             }
+
             
-            VStack {
-                HStack {
-                    if !isSelectionMode {
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding()
+            if isDeleting {
+                Color.black.opacity(0.4).ignoresSafeArea()
+                ProgressView("Deleting & Refreshing...")
+                    .foregroundColor(.white)
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .padding(24)
+                    .background(Color(white: 0.2))
+                    .cornerRadius(16)
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isSelectionMode {
+                    Button("Cancel") {
+                        isSelectionMode = false
+                        selectedItems.removeAll()
+                    }
+                    .disabled(isDeleting)
+                } else {
+                    Button("Select") {
+                        isSelectionMode = true
+                        if case .grouped(let groups) = displayStyle, categoryType != .similarPhotos {
+                            for group in groups {
+                                let itemsToSelect = group.items.dropFirst()
+                                for item in itemsToSelect {
+                                    selectedItems.insert(item.id)
+                                }
+                            }
                         }
                     }
-                    Spacer()
-                }
-                Spacer()
-            }
-            
-            if isSelectionMode {
-                VStack {
-                    Spacer()
-                    SelectionToolbar(onSelectAll: {
-                        let targetIDs: Set<String>
-                        if case .grouped(let groups) = displayStyle {
-                            let safeIDs = groups.flatMap { $0.items.dropFirst() }.map { $0.id }
-                            targetIDs = Set(safeIDs)
-                        } else {
-                            targetIDs = allItemIDs
-                        }
-                        
-                        if selectedItems == targetIDs || selectedItems.count == allItemIDs.count {
-                            selectedItems.removeAll()
-                        } else {
-                            selectedItems = targetIDs
-                        }
-                    }, onDelete: {
-                        if !selectedItems.isEmpty {
-                            showDeleteConfirmation = true
-                        }
-                    })
+                    .disabled(itemsCount == 0)
                 }
             }
         }
-        .navigationBarHidden(true)
         .confirmationDialog(
             "Delete \(selectedItems.count) item(s)?",
             isPresented: $showDeleteConfirmation,
@@ -258,6 +277,7 @@ struct CategoryDetailView: View {
     }
     
     private func deleteSelectedItems() {
+        isDeleting = true
         Task {
             do {
                 try await viewModel.deleteItems(withIDs: selectedItems)
@@ -269,6 +289,7 @@ struct CategoryDetailView: View {
             } catch {
                 deleteError = error.localizedDescription
             }
+            isDeleting = false
         }
     }
 }

@@ -8,6 +8,27 @@ import Combine
 import Photos
 import UIKit
 
+import SwiftUI
+
+public enum CategoryType {
+    case screenshots
+    case videos
+    case duplicatePhotos
+    case similarPhotos
+    case duplicateVideos
+    case largeVideos
+}
+
+struct CategoryStatistics: Identifiable {
+    let id = UUID()
+    let categoryType: CategoryType
+    let title: String
+    let itemCount: Int
+    let totalSize: Int64
+    let previewItems: [MediaItem]
+    let color: Color
+}
+
 @MainActor
 class GalleryViewModel: ObservableObject {
     let photoLibraryService: PhotoLibraryService
@@ -29,6 +50,8 @@ class GalleryViewModel: ObservableObject {
     }
     
     func startScanning() async {
+        if case .scanning = scanState { return }
+        
         self.scanState = .requestingPermission
         let status = await photoLibraryService.requestAuthorization()
         
@@ -89,6 +112,17 @@ class GalleryViewModel: ObservableObject {
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: size)
+    }
+    
+    var categoryStatistics: [CategoryStatistics] {
+        return [
+            CategoryStatistics(categoryType: .screenshots, title: "Screenshots", itemCount: screenshots.count, totalSize: totalSize(for: screenshots), previewItems: Array(screenshots.prefix(10)), color: .red),
+            CategoryStatistics(categoryType: .videos, title: "Videos", itemCount: videos.count, totalSize: totalSize(for: videos), previewItems: Array(videos.prefix(10)), color: .green),
+            CategoryStatistics(categoryType: .duplicatePhotos, title: "Duplicate Photos", itemCount: Set(duplicatePhotos.flatMap { $0.items }).count, totalSize: totalSize(for: duplicatePhotos), previewItems: Array(duplicatePhotos.flatMap { $0.items }.prefix(10)), color: .cyan),
+            CategoryStatistics(categoryType: .similarPhotos, title: "Similar Photos", itemCount: Set(similarPhotos.flatMap { $0.items }).count, totalSize: totalSize(for: similarPhotos), previewItems: Array(similarPhotos.flatMap { $0.items }.prefix(10)), color: .purple),
+            CategoryStatistics(categoryType: .duplicateVideos, title: "Duplicate Videos", itemCount: Set(duplicateVideos.flatMap { $0.items }).count, totalSize: totalSize(for: duplicateVideos), previewItems: Array(duplicateVideos.flatMap { $0.items }.prefix(10)), color: .orange),
+            CategoryStatistics(categoryType: .largeVideos, title: "Large Videos", itemCount: largeVideos.count, totalSize: totalSize(for: largeVideos), previewItems: Array(largeVideos.prefix(10)), color: .blue)
+        ]
     }
     
     func deleteItems(withIDs ids: Set<String>) async throws {

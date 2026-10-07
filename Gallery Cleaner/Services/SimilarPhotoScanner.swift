@@ -28,16 +28,30 @@ public class SimilarPhotoScanner: SimilarPhotoScanning {
         // 1. Fetch all feature prints in parallel using a TaskGroup
         var featurePrints: [String: VNFeaturePrintObservation] = [:]
         await withTaskGroup(of: (String, VNFeaturePrintObservation?).self) { group in
-            for photo in photos {
+            let maxConcurrentTasks = 10
+            var i = 0
+            
+            while i < min(maxConcurrentTasks, photos.count) {
+                let photo = photos[i]
                 group.addTask {
                     let print = await MediaFeatureService.shared.getFeaturePrint(for: photo.asset)
                     return (photo.id, print)
                 }
+                i += 1
             }
             
             for await (id, print) in group {
                 if let print = print {
                     featurePrints[id] = print
+                }
+                
+                if i < photos.count {
+                    let photo = photos[i]
+                    group.addTask {
+                        let print = await MediaFeatureService.shared.getFeaturePrint(for: photo.asset)
+                        return (photo.id, print)
+                    }
+                    i += 1
                 }
             }
         }

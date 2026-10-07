@@ -14,7 +14,7 @@ struct CategoryCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Button(action: action) {
+            
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
@@ -29,7 +29,6 @@ struct CategoryCard: View {
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
                 }
-            }
             
             if items.isEmpty {
                 Text("No items found")
@@ -46,6 +45,7 @@ struct CategoryCard: View {
                                 isSelectionMode: false,
                                 onTap: {}
                             )
+                            .allowsHitTesting(false)
                             .frame(width: 100, height: 100)
                         }
                     }
@@ -54,6 +54,7 @@ struct CategoryCard: View {
         }
         .padding(16)
         .background(Color(white: 0.12))
+        .contentShape(Rectangle())
         .cornerRadius(20)
     }
 }

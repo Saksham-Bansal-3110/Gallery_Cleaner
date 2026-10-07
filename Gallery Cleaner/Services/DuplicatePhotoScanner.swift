@@ -21,16 +21,30 @@ public class DuplicatePhotoScanner: DuplicatePhotoScanning {
         var hashes: [String: [MediaItem]] = [:]
         
         await withTaskGroup(of: (MediaItem, String?).self) { group in
-            for item in photos {
+            let maxConcurrentTasks = 20
+            var i = 0
+            
+            while i < min(maxConcurrentTasks, photos.count) {
+                let item = photos[i]
                 group.addTask {
                     let hash = await MediaHashService.shared.getHash(for: item.asset)
                     return (item, hash)
                 }
+                i += 1
             }
             
             for await (item, hash) in group {
                 if let hash = hash {
                     hashes[hash, default: []].append(item)
+                }
+                
+                if i < photos.count {
+                    let item = photos[i]
+                    group.addTask {
+                        let hash = await MediaHashService.shared.getHash(for: item.asset)
+                        return (item, hash)
+                    }
+                    i += 1
                 }
             }
         }

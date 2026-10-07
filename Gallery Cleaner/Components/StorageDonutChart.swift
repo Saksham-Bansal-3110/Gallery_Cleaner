@@ -10,6 +10,8 @@ struct ChartSegment: Identifiable {
     let color: Color
     let value: Double
     let label: String
+    let formattedValue: String
+    let itemCount: Int
 }
 
 struct StorageDonutChart: View {
@@ -97,27 +99,41 @@ struct StorageDonutChartView: View {
     var body: some View {
         HStack(spacing: 32) {
             ZStack {
-                DonutChartShape(segments: segments)
-                
-                // Add labels roughly around the circle
-                // In mock, they are static texts "102 MB" around the circle.
-                // We will add simple overlay texts for the mock.
-                Text("102 MB").font(.system(size: 10)).foregroundColor(.gray).offset(x: -70, y: -40)
-                Text("102 MB").font(.system(size: 10)).foregroundColor(.gray).offset(x: 70, y: -40)
-                Text("102 MB").font(.system(size: 10)).foregroundColor(.gray).offset(x: 70, y: 40)
-                Text("102 MB").font(.system(size: 10)).foregroundColor(.gray).offset(x: -70, y: 40)
+                if segments.isEmpty {
+                    Circle()
+                        .stroke(Color(white: 0.3), style: StrokeStyle(lineWidth: 12, lineCap: .butt))
+                        .frame(width: 150, height: 150)
+                } else {
+                    DonutChartShape(segments: segments)
+                }
             }
             
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(segments) { segment in
-                    HStack(spacing: 6) {
-                        Rectangle()
-                            .fill(segment.color)
-                            .frame(width: 8, height: 8)
-                            .cornerRadius(2)
-                        Text(segment.label)
-                            .font(.system(size: 12, weight: .regular))
-                            .foregroundColor(.white)
+                if segments.isEmpty {
+                    Text("No Media Yet")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 14))
+                } else {
+                    ForEach(segments) { segment in
+                        HStack(spacing: 6) {
+                            Rectangle()
+                                .fill(segment.color)
+                                .frame(width: 8, height: 8)
+                                .cornerRadius(2)
+                                .layoutPriority(2)
+                            Text(segment.label)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .layoutPriority(1)
+                            Spacer(minLength: 4)
+                            Text(segment.formattedValue)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Color(white: 0.7))
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
                     }
                 }
             }

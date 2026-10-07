@@ -37,23 +37,48 @@ struct DuplicateGroupView: View {
                 }
             }
             
-            HStack(spacing: 12) {
-                ForEach(group.items) { item in
-                    MediaThumbnail(
-                        item: item,
-                        isSelected: selectedItems.contains(item.id),
-                        isSelectionMode: isSelectionMode,
-                        onTap: {
-                            if isSelectionMode {
-                                if selectedItems.contains(item.id) {
-                                    selectedItems.remove(item.id)
-                                } else {
-                                    selectedItems.insert(item.id)
+            if group.items.count > 2 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(group.items) { item in
+                            MediaThumbnail(
+                                item: item,
+                                isSelected: selectedItems.contains(item.id),
+                                isSelectionMode: isSelectionMode,
+                                onTap: {
+                                    if isSelectionMode {
+                                        if selectedItems.contains(item.id) {
+                                            selectedItems.remove(item.id)
+                                        } else {
+                                            selectedItems.insert(item.id)
+                                        }
+                                    }
+                                }
+                            )
+                            .frame(width: 120, height: 120)
+                        }
+                    }
+                }
+            } else {
+                HStack(spacing: 12) {
+                    ForEach(group.items) { item in
+                        MediaThumbnail(
+                            item: item,
+                            isSelected: selectedItems.contains(item.id),
+                            isSelectionMode: isSelectionMode,
+                            onTap: {
+                                if isSelectionMode {
+                                    if selectedItems.contains(item.id) {
+                                        selectedItems.remove(item.id)
+                                    } else {
+                                        selectedItems.insert(item.id)
+                                    }
                                 }
                             }
-                        }
-                    )
-                    .frame(height: 120) // Give it a fixed height or let it expand based on aspect ratio
+                        )
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(1, contentMode: .fit)
+                    }
                 }
             }
         }
