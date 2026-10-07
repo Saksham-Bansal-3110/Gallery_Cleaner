@@ -19,9 +19,9 @@ class GalleryViewModel: ObservableObject {
     @Published var videos: [MediaItem] = []
     
     // We'll populate these later in the duplicate phase
-    @Published var duplicatePhotos: [MediaItem] = []
+    @Published var duplicatePhotos: [DuplicateGroup] = []
     @Published var similarPhotos: [MediaItem] = []
-    @Published var duplicateVideos: [MediaItem] = []
+    @Published var duplicateVideos: [DuplicateGroup] = []
     @Published var largeVideos: [MediaItem] = []
     
     init(photoLibraryService: PhotoLibraryService) {
@@ -48,6 +48,12 @@ class GalleryViewModel: ObservableObject {
                 
                 self.largeVideos = self.videos.filter { $0.sizeInBytes > 50 * 1024 * 1024 }
                 
+                let duplicateScanner = DuplicatePhotoScanner()
+                self.duplicatePhotos = await duplicateScanner.scanDuplicates(from: items)
+                
+                let duplicateVideoScanner = DuplicateVideoScanner()
+                self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: items)
+                
                 if progress >= 1.0 {
                     self.scanState = .completed
                 } else {
@@ -66,6 +72,12 @@ class GalleryViewModel: ObservableObject {
     
     func totalSize(for items: [MediaItem]) -> Int64 {
         return items.reduce(0) { $0 + $1.sizeInBytes }
+    }
+    
+    func totalSize(for groups: [DuplicateGroup]) -> Int64 {
+        return groups.reduce(0) { sum, group in
+            sum + totalSize(for: group.items)
+        }
     }
     
     func formatSize(_ size: Int64) -> String {

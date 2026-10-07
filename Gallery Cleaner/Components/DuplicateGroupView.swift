@@ -6,52 +6,68 @@
 import SwiftUI
 
 struct DuplicateGroupView: View {
-    var title: String
-    var isSelected: Bool
-    var onToggleSelection: () -> Void
-    var itemsCount: Int
+    var group: DuplicateGroup
+    @Binding var selectedItems: Set<String>
+    var isSelectionMode: Bool
+    
+    var isFullySelected: Bool {
+        let itemIDs = Set(group.items.map { $0.id })
+        return !itemIDs.isEmpty && selectedItems.isSuperset(of: itemIDs)
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(title)
+                Text(group.title)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
                 Spacer()
                 
-                Button(action: onToggleSelection) {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 20))
-                        .foregroundColor(isSelected ? .blue : .white)
-                        .background(
-                            Circle()
-                                .fill(isSelected ? Color.white : Color.clear)
-                                .frame(width: 18, height: 18)
-                        )
+                if isSelectionMode {
+                    Button(action: toggleGroupSelection) {
+                        Image(systemName: isFullySelected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 20))
+                            .foregroundColor(isFullySelected ? .blue : .white)
+                            .background(
+                                Circle()
+                                    .fill(isFullySelected ? Color.white : Color.clear)
+                                    .frame(width: 18, height: 18)
+                            )
+                    }
                 }
             }
             
             HStack(spacing: 12) {
-                ForEach(0..<itemsCount, id: \.self) { _ in
-                    ZStack(alignment: .topLeading) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(white: 0.3))
-                            .aspectRatio(1, contentMode: .fit)
-                        
-                        Text("12 MB")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(Color.white.opacity(0.3))
-                            .clipShape(Capsule())
-                            .padding(6)
-                    }
+                ForEach(group.items) { item in
+                    MediaThumbnail(
+                        item: item,
+                        isSelected: selectedItems.contains(item.id),
+                        isSelectionMode: isSelectionMode,
+                        onTap: {
+                            if isSelectionMode {
+                                if selectedItems.contains(item.id) {
+                                    selectedItems.remove(item.id)
+                                } else {
+                                    selectedItems.insert(item.id)
+                                }
+                            }
+                        }
+                    )
+                    .frame(height: 120) // Give it a fixed height or let it expand based on aspect ratio
                 }
             }
         }
         .padding(16)
         .background(Color(white: 0.12))
         .cornerRadius(12)
+    }
+    
+    private func toggleGroupSelection() {
+        let itemIDs = Set(group.items.map { $0.id })
+        if isFullySelected {
+            selectedItems.subtract(itemIDs)
+        } else {
+            selectedItems.formUnion(itemIDs)
+        }
     }
 }

@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var navigateToScreenshots = false
     @State private var navigateToVideos = false
     @State private var navigateToDuplicates = false
+    @State private var navigateToDuplicateVideos = false
     
     var body: some View {
         NavigationStack {
@@ -46,19 +47,30 @@ struct HomeView: View {
             .navigationDestination(isPresented: $navigateToScreenshots) {
                 CategoryDetailView(
                     title: "Screenshots",
-                    items: viewModel.screenshots,
+                    displayStyle: .grid(items: viewModel.screenshots),
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.screenshots))
                 )
             }
             .navigationDestination(isPresented: $navigateToVideos) {
                 CategoryDetailView(
                     title: "Videos",
-                    items: viewModel.videos,
+                    displayStyle: .grid(items: viewModel.videos),
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.videos))
                 )
             }
             .navigationDestination(isPresented: $navigateToDuplicates) {
-                DuplicatesView()
+                CategoryDetailView(
+                    title: "Duplicate Photos",
+                    displayStyle: .grouped(groups: viewModel.duplicatePhotos),
+                    totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicatePhotos))
+                )
+            }
+            .navigationDestination(isPresented: $navigateToDuplicateVideos) {
+                CategoryDetailView(
+                    title: "Duplicate Videos",
+                    displayStyle: .grouped(groups: viewModel.duplicateVideos),
+                    totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicateVideos))
+                )
             }
             .navigationBarHidden(true)
         }
@@ -111,9 +123,9 @@ struct HomeView: View {
                 
                 CategoryCard(
                     title: "Duplicate Photos",
-                    itemsCount: viewModel.duplicatePhotos.count,
+                    itemsCount: viewModel.duplicatePhotos.reduce(0) { $0 + $1.items.count },
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicatePhotos)),
-                    items: viewModel.duplicatePhotos
+                    items: viewModel.duplicatePhotos.flatMap { $0.items }
                 ) {
                     navigateToDuplicates = true
                 }
@@ -129,11 +141,11 @@ struct HomeView: View {
                 
                 CategoryCard(
                     title: "Duplicate Videos",
-                    itemsCount: viewModel.duplicateVideos.count,
+                    itemsCount: viewModel.duplicateVideos.reduce(0) { $0 + $1.items.count },
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicateVideos)),
-                    items: viewModel.duplicateVideos
+                    items: viewModel.duplicateVideos.flatMap { $0.items }
                 ) {
-                    // Action
+                    navigateToDuplicateVideos = true
                 }
                 
                 CategoryCard(
