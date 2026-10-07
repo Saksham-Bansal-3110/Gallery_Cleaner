@@ -38,8 +38,9 @@ class GalleryViewModel: ObservableObject {
             let items = await photoLibraryService.fetchAllMedia()
             self.allItems = items
             
-            // Basic categorization for now
-            self.screenshots = items.filter { $0.asset.mediaSubtypes.contains(.photoScreenshot) }
+            let screenshotScanner = ScreenshotScanner()
+            self.screenshots = screenshotScanner.scanScreenshots(from: items)
+            
             self.videos = items.filter { $0.mediaType == .video }
             
             // Large videos (> 50 MB for example)

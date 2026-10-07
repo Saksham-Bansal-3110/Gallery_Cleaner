@@ -1,0 +1,89 @@
+# ============================================
+# Xcode
+# ============================================
+
+# User-specific Xcode settings
+xcuserdata/
+
+# Xcode workspace user settings
+*.xcuserstate
+
+# Build products
+DerivedData/
+build/
+
+# Archives
+*.xcarchive
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# Xcode generated files
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ============================================
+# macOS
+# ============================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnail cache
+._*
+
+# ============================================
+# Swift / SPM
+# ============================================
+
+.swiftpm/
+
+# ============================================
+# Fastlane
+# ============================================
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ============================================
+# CocoaPods
+# ============================================
+
+Pods/
+
+# ============================================
+# Carthage
+# ============================================
+
+Carthage/Build/
+
+# ============================================
+# Temporary / Local Files
+# ============================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# ============================================
+# Environment / Secrets
+# ============================================
+
+.env
+.env.*
+!.env.example
+
+# ============================================
+# Local AI / Agent Files
+# ============================================
+
+# Ignore Antigravity/agent-generated local state if applicable
+.antigravity/
