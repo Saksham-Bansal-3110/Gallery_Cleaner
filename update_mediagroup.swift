@@ -1,13 +1,16 @@
-//
-//  MediaGroup.swift
-//  Gallery Cleaner
-//
-
 import Foundation
 
-public struct DuplicateGroup: Identifiable {
-    public let id: String
-    public let title: String
+let path = "Gallery Cleaner/Models/MediaGroup.swift"
+var content = try! String(contentsOfFile: path)
+content = content.replacingOccurrences(of: """
+    public let items: [MediaItem]
+    
+    public init(id: String, title: String, items: [MediaItem]) {
+        self.id = id
+        self.title = title
+        self.items = items
+    }
+""", with: """
     public let items: [MediaItem]
     public var recommendedItem: MediaItem?
     public var rankedItems: [MediaItem]?
@@ -19,10 +22,5 @@ public struct DuplicateGroup: Identifiable {
         self.recommendedItem = recommendedItem
         self.rankedItems = rankedItems
     }
-}
-
-public enum CategoryDisplayStyle {
-    case grid(items: [MediaItem])
-    case list(items: [MediaItem])
-    case grouped(groups: [DuplicateGroup])
-}
+""")
+try! content.write(toFile: path, atomically: true, encoding: .utf8)

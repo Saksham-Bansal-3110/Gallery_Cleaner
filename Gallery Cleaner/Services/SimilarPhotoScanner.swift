@@ -1,110 +1,72 @@
-//
-//  SimilarPhotoScanner.swift
-//  Gallery Cleaner
-//
-
 import Foundation
 import Photos
-import Vision
+import SwiftData
 
 public protocol SimilarPhotoScanning {
-    func scanSimilarPhotos(from items: [MediaItem]) async -> [DuplicateGroup]
+    func scanSimilarPhotos(from items: [MediaItem], exactDuplicateIDs: Set<String>) async -> [DuplicateGroup]
 }
 
 public class SimilarPhotoScanner: SimilarPhotoScanning {
-    // Tuning threshold: lower means more similar. VNFeaturePrintObservation distance is usually > 0.
-    // A threshold of ~10.0 to 15.0 is typical for visually similar images.
-    public let similarityThreshold: Float = 12.0
-    // Time constraint to avoid N^2 comparisons across the entire library
-    public let maxTimeDifference: TimeInterval = 24 * 60 * 60 // 24 hours
     
     public init() {}
     
-    public func scanSimilarPhotos(from items: [MediaItem]) async -> [DuplicateGroup] {
-        let photos = items.filter { $0.mediaType == .image }.sorted { ($0.creationDate ?? Date.distantPast) > ($1.creationDate ?? Date.distantPast) }
-        
+    public func scanSimilarPhotos(from items: [MediaItem], exactDuplicateIDs: Set<String> = []) async -> [DuplicateGroup] {
+        let photos = items.filter { $0.mediaType == .image }
         guard !photos.isEmpty else { return [] }
         
-        // 1. Fetch all feature prints in parallel using a TaskGroup
-        var featurePrints: [String: VNFeaturePrintObservation] = [:]
-        await withTaskGroup(of: (String, VNFeaturePrintObservation?).self) { group in
-            let maxConcurrentTasks = 10
-            var i = 0
-            
-            while i < min(maxConcurrentTasks, photos.count) {
-                let photo = photos[i]
-                group.addTask {
-                    let print = await MediaFeatureService.shared.getFeaturePrint(for: photo.asset)
-                    return (photo.id, print)
-                }
-                i += 1
-            }
-            
-            for await (id, print) in group {
-                if let print = print {
-                    featurePrints[id] = print
-                }
-                
-                if i < photos.count {
-                    let photo = photos[i]
-                    group.addTask {
-                        let print = await MediaFeatureService.shared.getFeaturePrint(for: photo.asset)
-                        return (photo.id, print)
-                    }
-                    i += 1
-                }
-            }
+        let assets = photos.map { $0.asset }
+        
+        // STAGE 2: Analysis & Feature Extraction
+        // Needs cache instance. We assume we can create an ephemeral SwiftData container if we don't have the main one, 
+        // or we just inject it. But for now, we'll try to instantiate a temporary one safely if not injected.
+        let container: ModelContainer
+        do {
+            container = try ModelContainer(for: AssetAnalysisData.self)
+        } catch {
+            print("SimilarPhotoScanner: Failed to create SwiftData container. Fallback to empty groups.")
+            return []
         }
         
-        // 2. Group visually similar photos using a sliding window
-        var processedIDs = Set<String>()
-        var similarGroups: [DuplicateGroup] = []
-        var groupIndex = 1
+        let cache = PhotoAnalysisCache(modelContainer: container)
+        let analysisService = PhotoAnalysisService(cache: cache)
         
-        for i in 0..<photos.count {
-            let basePhoto = photos[i]
-            guard !processedIDs.contains(basePhoto.id), let basePrint = featurePrints[basePhoto.id] else { continue }
-            
-            var currentGroupItems = [basePhoto]
-            processedIDs.insert(basePhoto.id)
-            
-            // Compare with subsequent photos
-            for j in (i+1)..<photos.count {
-                let candidatePhoto = photos[j]
-                if processedIDs.contains(candidatePhoto.id) { continue }
-                
-                // Time heuristic: break early since array is sorted by date
-                if let baseDate = basePhoto.creationDate, let candidateDate = candidatePhoto.creationDate {
-                    if abs(baseDate.timeIntervalSince(candidateDate)) > maxTimeDifference {
-                        break 
-                    }
+        let analyses = await analysisService.analyze(assets: assets)
+        
+        // STAGE 3: Candidates, Scoring, Clustering
+        let candidateGenerator = CandidateGenerator()
+        let pairs = candidateGenerator.generateCandidates(items: photos, analyses: analyses, exactDuplicateIDs: exactDuplicateIDs)
+        
+        let scorer = SimilarityScorer()
+        let scores = await scorer.score(pairs: pairs, analyses: analyses)
+        
+        let clusterer = SimilarityClusterer()
+        let clusters = clusterer.cluster(scores: scores)
+        
+        // STAGE 4: Ranking & Output
+        let rankingService = PhotoRankingService()
+        
+        let itemDict = Dictionary(uniqueKeysWithValues: photos.map { ($0.id, $0) })
+        var similarGroups = [DuplicateGroup]()
+        
+        for (index, clusterIDs) in clusters.enumerated() {
+            let groupItems = clusterIDs.compactMap { itemDict[$0] }
+            if groupItems.count >= 2 {
+                // Determine group title
+                var title = "Similar \\(index + 1)"
+                if let first = groupItems.first?.filename {
+                    title = first + " (Similar)"
                 }
                 
-                if let candidatePrint = featurePrints[candidatePhoto.id] {
-                    var distance: Float = 0
-                    do {
-                        try basePrint.computeDistance(&distance, to: candidatePrint)
-                        if distance < similarityThreshold {
-                            currentGroupItems.append(candidatePhoto)
-                            processedIDs.insert(candidatePhoto.id)
-                        }
-                    } catch {
-                        // ignore error
-                    }
-                }
-            }
-            
-            if currentGroupItems.count > 1 {
-                var title = "Similar \(groupIndex)"
-                if let firstAsset = currentGroupItems.first?.asset {
-                    let resources = PHAssetResource.assetResources(for: firstAsset)
-                    if let filename = resources.first?.originalFilename {
-                        title = filename + " (Similar)"
-                    }
-                }
+                let rankingResult = await rankingService.rank(items: groupItems)
                 
-                similarGroups.append(DuplicateGroup(id: UUID().uuidString, title: title, items: currentGroupItems))
-                groupIndex += 1
+                let group = DuplicateGroup(
+                    id: UUID().uuidString,
+                    title: title,
+                    items: groupItems,
+                    recommendedItem: rankingResult.recommended,
+                    rankedItems: rankingResult.rankedItems
+                )
+                similarGroups.append(group)
             }
         }
         

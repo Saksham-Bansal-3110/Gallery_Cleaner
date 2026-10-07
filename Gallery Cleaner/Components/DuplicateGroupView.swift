@@ -45,6 +45,7 @@ struct DuplicateGroupView: View {
                                 item: item,
                                 isSelected: selectedItems.contains(item.id),
                                 isSelectionMode: isSelectionMode,
+                                isRecommended: group.recommendedItem?.id == item.id,
                                 onTap: {
                                     if isSelectionMode {
                                         if selectedItems.contains(item.id) {

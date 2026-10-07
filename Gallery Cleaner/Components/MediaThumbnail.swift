@@ -10,6 +10,7 @@ struct MediaThumbnail: View {
     let item: MediaItem
     var isSelected: Bool
     var isSelectionMode: Bool
+    var isRecommended: Bool = false
     var onTap: () -> Void
     
     @EnvironmentObject var galleryViewModel: GalleryViewModel
@@ -45,9 +46,19 @@ struct MediaThumbnail: View {
                     Spacer()
                 }
                 Spacer()
-                if let duration = item.formattedDuration {
-                    HStack {
-                        Spacer()
+                HStack {
+                    if isRecommended {
+                        Text("Recommended")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.green.opacity(0.7))
+                            .clipShape(Capsule())
+                            .accessibilityLabel("Recommended to keep")
+                    }
+                    Spacer()
+                    if let duration = item.formattedDuration {
                         Text(duration)
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(.white)

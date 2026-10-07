@@ -80,7 +80,8 @@ class GalleryViewModel: ObservableObject {
                 self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: items)
                 
                 let similarScanner = SimilarPhotoScanner()
-                self.similarPhotos = await similarScanner.scanSimilarPhotos(from: items)
+                let exactIDs = Set(self.duplicatePhotos.flatMap { $0.items }.map { $0.id })
+                self.similarPhotos = await similarScanner.scanSimilarPhotos(from: items, exactDuplicateIDs: exactIDs)
                 
                 if progress >= 1.0 {
                     self.scanState = .completed
@@ -151,6 +152,7 @@ class GalleryViewModel: ObservableObject {
         self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: allItems)
         
         let similarScanner = SimilarPhotoScanner()
-        self.similarPhotos = await similarScanner.scanSimilarPhotos(from: allItems)
+        let exactIDs = Set(self.duplicatePhotos.flatMap { $0.items }.map { $0.id })
+        self.similarPhotos = await similarScanner.scanSimilarPhotos(from: allItems, exactDuplicateIDs: exactIDs)
     }
 }
