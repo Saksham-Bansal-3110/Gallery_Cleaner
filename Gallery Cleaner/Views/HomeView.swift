@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var viewModel: GalleryViewModel
     @State private var navigateToScreenshots = false
+    @State private var navigateToVideos = false
     @State private var navigateToDuplicates = false
     
     var body: some View {
@@ -20,6 +21,15 @@ struct HomeView: View {
                         ProgressView("Scanning Library...")
                             .foregroundColor(.white)
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    }
+                } else if case let .scanning(progress) = viewModel.scanState {
+                    VStack {
+                        ProgressView("Analyzing sizes...", value: progress, total: 1.0)
+                            .foregroundColor(.white)
+                            .progressViewStyle(LinearProgressViewStyle(tint: .white))
+                            .padding()
+                        Text("\(Int(progress * 100))%")
+                            .foregroundColor(.gray)
                     }
                 } else if viewModel.scanState == .permissionDenied {
                     VStack {
@@ -40,8 +50,14 @@ struct HomeView: View {
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.screenshots))
                 )
             }
+            .navigationDestination(isPresented: $navigateToVideos) {
+                CategoryDetailView(
+                    title: "Videos",
+                    items: viewModel.videos,
+                    totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.videos))
+                )
+            }
             .navigationDestination(isPresented: $navigateToDuplicates) {
-                // Keep it mocked for now as per instructions: "Do not yet implement duplicate/similarity analysis"
                 DuplicatesView()
             }
             .navigationBarHidden(true)
@@ -90,7 +106,7 @@ struct HomeView: View {
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.videos)),
                     items: viewModel.videos
                 ) {
-                    // Action
+                    navigateToVideos = true
                 }
                 
                 CategoryCard(

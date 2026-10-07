@@ -32,15 +32,33 @@ struct MediaThumbnail: View {
                     .aspectRatio(1, contentMode: .fit)
             }
             
-            // Size Badge
-            Text(item.formattedSize)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.3))
-                .clipShape(Capsule())
-                .padding(6)
+            // Badges
+            VStack {
+                HStack {
+                    Text(item.formattedSize)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.white.opacity(0.3))
+                        .clipShape(Capsule())
+                    Spacer()
+                }
+                Spacer()
+                if let duration = item.formattedDuration {
+                    HStack {
+                        Spacer()
+                        Text(duration)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color.black.opacity(0.6))
+                            .cornerRadius(4)
+                    }
+                }
+            }
+            .padding(6)
             
             // Selection Indicator
             if isSelectionMode {

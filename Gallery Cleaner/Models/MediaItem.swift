@@ -31,10 +31,20 @@ public struct MediaItem: Identifiable, Hashable {
     }
     
     public var formattedSize: String {
+        guard sizeInBytes > 0 else { return "Unknown" }
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useGB]
         formatter.countStyle = .file
         return formatter.string(fromByteCount: sizeInBytes)
+    }
+    
+    public var formattedDuration: String? {
+        guard mediaType == .video, duration > 0 else { return nil }
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute, .second]
+        formatter.unitsStyle = .positional
+        formatter.zeroFormattingBehavior = .pad
+        return formatter.string(from: duration)
     }
     
     public static func == (lhs: MediaItem, rhs: MediaItem) -> Bool {

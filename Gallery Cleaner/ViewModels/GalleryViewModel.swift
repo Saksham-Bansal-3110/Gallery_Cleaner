@@ -34,19 +34,26 @@ class GalleryViewModel: ObservableObject {
         
         switch status {
         case .authorized, .limited:
-            self.scanState = .scanning
-            let items = await photoLibraryService.fetchAllMedia()
-            self.allItems = items
+            self.scanState = .scanning(progress: 0.0)
             
-            let screenshotScanner = ScreenshotScanner()
-            self.screenshots = screenshotScanner.scanScreenshots(from: items)
-            
-            self.videos = items.filter { $0.mediaType == .video }
-            
-            // Large videos (> 50 MB for example)
-            self.largeVideos = self.videos.filter { $0.sizeInBytes > 50 * 1024 * 1024 }
-            
-            self.scanState = .completed
+            let stream = photoLibraryService.fetchAllMedia()
+            for await (items, progress) in stream {
+                self.allItems = items
+                
+                let screenshotScanner = ScreenshotScanner()
+                self.screenshots = screenshotScanner.scanScreenshots(from: items)
+                
+                let videoScanner = VideoScanner()
+                self.videos = videoScanner.scanVideos(from: items)
+                
+                self.largeVideos = self.videos.filter { $0.sizeInBytes > 50 * 1024 * 1024 }
+                
+                if progress >= 1.0 {
+                    self.scanState = .completed
+                } else {
+                    self.scanState = .scanning(progress: progress)
+                }
+            }
             
         case .denied, .restricted:
             self.scanState = .permissionDenied
