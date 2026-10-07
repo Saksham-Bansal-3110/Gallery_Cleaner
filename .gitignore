@@ -87,3 +87,14 @@ Carthage/Build/
 
 # Ignore Antigravity/agent-generated local state if applicable
 .antigravity/
+
+# Temporary Antigravity repair scripts
+fix_*.swift
+fix_*.sh
+update_*.swift
+update_*.sh
+add_plist_keys.rb
+inject_properties.swift
+rewrite_*.sh
+sync.rb
+test_missing_edge.swift
