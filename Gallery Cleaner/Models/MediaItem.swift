@@ -17,8 +17,9 @@ public struct MediaItem: Identifiable, Hashable {
     public let pixelHeight: Int
     public let duration: TimeInterval
     public var sizeInBytes: Int64
+    public var filename: String?
     
-    public init(asset: PHAsset, sizeInBytes: Int64) {
+    public init(asset: PHAsset, sizeInBytes: Int64, filename: String? = nil) {
         self.id = asset.localIdentifier
         self.asset = asset
         self.mediaType = asset.mediaType
@@ -28,6 +29,7 @@ public struct MediaItem: Identifiable, Hashable {
         self.pixelHeight = asset.pixelHeight
         self.duration = asset.duration
         self.sizeInBytes = sizeInBytes
+        self.filename = filename
     }
     
     public var formattedSize: String {

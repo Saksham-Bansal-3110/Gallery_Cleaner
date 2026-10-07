@@ -22,7 +22,7 @@ struct CategoryDetailView: View {
     
     var allItemIDs: Set<String> {
         switch displayStyle {
-        case .grid(let items):
+        case .grid(let items), .list(let items):
             return Set(items.map { $0.id })
         case .grouped(let groups):
             return Set(groups.flatMap { $0.items }.map { $0.id })
@@ -108,6 +108,64 @@ struct CategoryDetailView: View {
                                 }
                             }
                             .padding(.horizontal, 16)
+                            .padding(.bottom, 100)
+                            
+                        case .list(let items):
+                            LazyVStack(spacing: 12) {
+                                ForEach(items) { item in
+                                    HStack(spacing: 12) {
+                                        if isSelectionMode {
+                                            Button(action: {
+                                                if selectedItems.contains(item.id) {
+                                                    selectedItems.remove(item.id)
+                                                } else {
+                                                    selectedItems.insert(item.id)
+                                                }
+                                            }) {
+                                                Image(systemName: selectedItems.contains(item.id) ? "checkmark.circle.fill" : "circle")
+                                                    .font(.system(size: 20))
+                                                    .foregroundColor(selectedItems.contains(item.id) ? .blue : .white)
+                                                    .background(
+                                                        Circle()
+                                                            .fill(selectedItems.contains(item.id) ? Color.white : Color.clear)
+                                                            .frame(width: 18, height: 18)
+                                                    )
+                                            }
+                                        }
+                                        
+                                        MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
+                                            .frame(width: 80, height: 80)
+                                            .cornerRadius(8)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(item.filename ?? "Unknown")
+                                                .font(.system(size: 16, weight: .medium))
+                                                .foregroundColor(.white)
+                                                .lineLimit(1)
+                                            
+                                            HStack(spacing: 8) {
+                                                Text(item.formattedSize)
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(Color(white: 0.6))
+                                                
+                                                if let duration = item.formattedDuration {
+                                                    Text("•")
+                                                        .foregroundColor(Color(white: 0.4))
+                                                    Text(duration)
+                                                        .font(.system(size: 14))
+                                                        .foregroundColor(Color(white: 0.6))
+                                                }
+                                            }
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(Color(white: 0.12))
+                                    .cornerRadius(12)
+                                    .padding(.horizontal, 16)
+                                }
+                            }
                             .padding(.bottom, 100)
                             
                         case .grouped(let groups):

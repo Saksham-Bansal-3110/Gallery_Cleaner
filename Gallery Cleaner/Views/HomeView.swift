@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var navigateToDuplicates = false
     @State private var navigateToDuplicateVideos = false
     @State private var navigateToSimilarPhotos = false
+    @State private var navigateToLargeVideos = false
     
     var body: some View {
         NavigationStack {
@@ -78,6 +79,13 @@ struct HomeView: View {
                     title: "Similar Photos",
                     displayStyle: .grouped(groups: viewModel.similarPhotos),
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.similarPhotos))
+                )
+            }
+            .navigationDestination(isPresented: $navigateToLargeVideos) {
+                CategoryDetailView(
+                    title: "Large Videos",
+                    displayStyle: .list(items: viewModel.largeVideos),
+                    totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.largeVideos))
                 )
             }
             .navigationBarHidden(true)
@@ -162,7 +170,7 @@ struct HomeView: View {
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.largeVideos)),
                     items: viewModel.largeVideos
                 ) {
-                    // Action
+                    navigateToLargeVideos = true
                 }
             }
             .padding(.horizontal, 16)

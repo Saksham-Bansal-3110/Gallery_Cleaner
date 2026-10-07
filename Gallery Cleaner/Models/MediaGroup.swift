@@ -19,5 +19,6 @@ public struct DuplicateGroup: Identifiable {
 
 public enum CategoryDisplayStyle {
     case grid(items: [MediaItem])
+    case list(items: [MediaItem])
     case grouped(groups: [DuplicateGroup])
 }

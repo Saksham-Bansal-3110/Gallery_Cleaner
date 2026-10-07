@@ -49,8 +49,9 @@ class PhotoLibraryManager: PhotoLibraryService {
                 var processedCount = 0
                 for i in 0..<items.count {
                     let asset = items[i].asset
-                    let size = await MediaSizeService.shared.getSize(for: asset)
-                    items[i].sizeInBytes = size
+                    let sizeAndName = await MediaSizeService.shared.getSizeAndFilename(for: asset)
+                    items[i].sizeInBytes = sizeAndName.0
+                    items[i].filename = sizeAndName.1
                     
                     processedCount += 1
                     if processedCount % 10 == 0 || processedCount == totalCount {

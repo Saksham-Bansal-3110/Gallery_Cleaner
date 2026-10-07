@@ -46,7 +46,9 @@ class GalleryViewModel: ObservableObject {
                 let videoScanner = VideoScanner()
                 self.videos = videoScanner.scanVideos(from: items)
                 
-                self.largeVideos = self.videos.filter { $0.sizeInBytes > 50 * 1024 * 1024 }
+                self.largeVideos = self.videos
+                    .filter { $0.sizeInBytes >= AppConfig.largeVideoThreshold }
+                    .sorted { $0.sizeInBytes > $1.sizeInBytes }
                 
                 let duplicateScanner = DuplicatePhotoScanner()
                 self.duplicatePhotos = await duplicateScanner.scanDuplicates(from: items)

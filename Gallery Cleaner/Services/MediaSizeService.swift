@@ -9,27 +9,26 @@ import Photos
 public actor MediaSizeService {
     public static let shared = MediaSizeService()
     
-    private var sizeCache: [String: Int64] = [:]
+    private var sizeCache: [String: (Int64, String?)] = [:]
     
     private init() {}
     
-    public func getSize(for asset: PHAsset) async -> Int64 {
+    public func getSizeAndFilename(for asset: PHAsset) async -> (Int64, String?) {
         if let cached = sizeCache[asset.localIdentifier] {
             return cached
         }
         
-        // Use withCheckedContinuation since assetResources can be slow.
-        // For iCloud videos, it may need network access if not local. However, assetResources(for:) usually returns metadata without downloading the full asset.
-        let size = await withCheckedContinuation { continuation in
+        let result = await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let resources = PHAssetResource.assetResources(for: asset)
                 let totalSize = resources.compactMap { $0.value(forKey: "fileSize") as? Int64 }.reduce(0, +)
-                continuation.resume(returning: totalSize)
+                let filename = resources.first?.originalFilename
+                continuation.resume(returning: (totalSize, filename))
             }
         }
         
-        sizeCache[asset.localIdentifier] = size
-        return size
+        sizeCache[asset.localIdentifier] = result
+        return result
     }
     
     public func clearCache() {
