@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var navigateToVideos = false
     @State private var navigateToDuplicates = false
     @State private var navigateToDuplicateVideos = false
+    @State private var navigateToSimilarPhotos = false
     
     var body: some View {
         NavigationStack {
@@ -70,6 +71,13 @@ struct HomeView: View {
                     title: "Duplicate Videos",
                     displayStyle: .grouped(groups: viewModel.duplicateVideos),
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.duplicateVideos))
+                )
+            }
+            .navigationDestination(isPresented: $navigateToSimilarPhotos) {
+                CategoryDetailView(
+                    title: "Similar Photos",
+                    displayStyle: .grouped(groups: viewModel.similarPhotos),
+                    totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.similarPhotos))
                 )
             }
             .navigationBarHidden(true)
@@ -132,11 +140,11 @@ struct HomeView: View {
                 
                 CategoryCard(
                     title: "Similar Photos",
-                    itemsCount: viewModel.similarPhotos.count,
+                    itemsCount: viewModel.similarPhotos.reduce(0) { $0 + $1.items.count },
                     totalSize: viewModel.formatSize(viewModel.totalSize(for: viewModel.similarPhotos)),
-                    items: viewModel.similarPhotos
+                    items: viewModel.similarPhotos.flatMap { $0.items }
                 ) {
-                    // Action
+                    navigateToSimilarPhotos = true
                 }
                 
                 CategoryCard(

@@ -20,7 +20,7 @@ class GalleryViewModel: ObservableObject {
     
     // We'll populate these later in the duplicate phase
     @Published var duplicatePhotos: [DuplicateGroup] = []
-    @Published var similarPhotos: [MediaItem] = []
+    @Published var similarPhotos: [DuplicateGroup] = []
     @Published var duplicateVideos: [DuplicateGroup] = []
     @Published var largeVideos: [MediaItem] = []
     
@@ -53,6 +53,9 @@ class GalleryViewModel: ObservableObject {
                 
                 let duplicateVideoScanner = DuplicateVideoScanner()
                 self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: items)
+                
+                let similarScanner = SimilarPhotoScanner()
+                self.similarPhotos = await similarScanner.scanSimilarPhotos(from: items)
                 
                 if progress >= 1.0 {
                     self.scanState = .completed
