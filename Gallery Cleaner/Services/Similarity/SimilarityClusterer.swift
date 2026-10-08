@@ -47,7 +47,7 @@ public class SimilarityClusterer {
         let maxIntraGroupDistance = SimilarityConfiguration.shared.strongSimilarityThreshold
         
         // Filter edges by high confidence threshold immediately
-        let validScores = scores.filter { $0.distance <= maxIntraGroupDistance }
+        let validScores = scores.filter { $0.distance < maxIntraGroupDistance }
             .sorted { $0.distance < $1.distance }
         
         var clusters: [[String]] = []
@@ -86,7 +86,7 @@ public class SimilarityClusterer {
                 let clusterNodes = clusters[cU]
                 var canJoin = true
                 for node in clusterNodes {
-                    if distance(between: node, and: v) > maxIntraGroupDistance {
+                    if distance(between: node, and: v) >= maxIntraGroupDistance {
                         canJoin = false
                         break
                     }
@@ -101,7 +101,7 @@ public class SimilarityClusterer {
                 let clusterNodes = clusters[cV]
                 var canJoin = true
                 for node in clusterNodes {
-                    if distance(between: node, and: u) > maxIntraGroupDistance {
+                    if distance(between: node, and: u) >= maxIntraGroupDistance {
                         canJoin = false
                         break
                     }
@@ -119,7 +119,7 @@ public class SimilarityClusterer {
                 var canMerge = true
                 for nU in nodesU {
                     for nV in nodesV {
-                        if distance(between: nU, and: nV) > maxIntraGroupDistance {
+                        if distance(between: nU, and: nV) >= maxIntraGroupDistance {
                             canMerge = false
                             break
                         }

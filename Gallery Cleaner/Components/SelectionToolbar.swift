@@ -14,26 +14,26 @@ struct SelectionToolbar: View {
             Button(action: onSelectAll) {
                 Text("Select All")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Color(white: 0.15))
+                    .background(Color(.tertiarySystemFill))
                     .clipShape(Capsule())
             }
             
             Button(action: onDelete) {
                 Text("Delete")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .background(Color(white: 0.15))
+                    .background(Color(.tertiarySystemFill))
                     .clipShape(Capsule())
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 24)
-        .background(Color.black)
+        .background(Color(.systemBackground))
     }
 }

@@ -17,6 +17,17 @@ public enum CategoryType {
     case similarPhotos
     case duplicateVideos
     case largeVideos
+    
+    public var systemImage: String {
+        switch self {
+        case .screenshots: return "camera.viewfinder"
+        case .videos: return "video.fill"
+        case .duplicatePhotos: return "square.on.square"
+        case .similarPhotos: return "square.stack.3d.up"
+        case .duplicateVideos: return "rectangle.on.rectangle"
+        case .largeVideos: return "externaldrive.fill"
+        }
+    }
 }
 
 struct CategoryStatistics: Identifiable {
@@ -27,6 +38,7 @@ struct CategoryStatistics: Identifiable {
     let totalSize: Int64
     let previewItems: [MediaItem]
     let color: Color
+    var systemImage: String { categoryType.systemImage }
 }
 
 @MainActor

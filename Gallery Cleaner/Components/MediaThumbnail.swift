@@ -24,7 +24,7 @@ struct MediaThumbnail: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(white: 0.2))
+                    .fill(Color(.tertiarySystemFill))
                     .aspectRatio(1, contentMode: .fit)
             }
             
@@ -32,8 +32,8 @@ struct MediaThumbnail: View {
             VStack {
                 HStack {
                     Text(item.formattedSize)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.white)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(Color.black.opacity(0.78))
@@ -44,8 +44,8 @@ struct MediaThumbnail: View {
                 HStack {
                     if isRecommended {
                         Text("Recommended")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.white)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(Color.green.opacity(0.7))
@@ -55,8 +55,8 @@ struct MediaThumbnail: View {
                     Spacer()
                     if let duration = item.formattedDuration {
                         Text(duration)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
                             .background(Color.black.opacity(0.78))
@@ -74,7 +74,7 @@ struct MediaThumbnail: View {
                         Spacer()
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                             .font(.system(size: 20))
-                            .foregroundColor(isSelected ? .blue : .white)
+                            .foregroundStyle(isSelected ? .blue : .white)
                             .background(
                                 Circle()
                                     .fill(isSelected ? Color.white : Color.clear)

@@ -19,7 +19,7 @@ struct StorageOverviewView: View {
                 HStack(spacing: 0) {
                     if totalSize == 0 {
                         Rectangle()
-                            .fill(Color(white: 0.3))
+                            .fill(Color(.tertiaryLabel))
                     } else {
                         ForEach(segments) { segment in
                             if segment.value > 0 {
@@ -46,14 +46,14 @@ struct StorageOverviewView: View {
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(segment.label)
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.primary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                             
                             Text("\(segment.itemCount) • \(segment.formattedValue)")
-                                .font(.system(size: 12))
-                                .foregroundColor(Color(white: 0.6))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                                 .lineLimit(1)
                         }
                     }

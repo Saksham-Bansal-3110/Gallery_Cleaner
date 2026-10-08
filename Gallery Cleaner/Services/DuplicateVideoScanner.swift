@@ -68,6 +68,15 @@ public class DuplicateVideoScanner: DuplicateVideoScanning {
         }
         
         // Sort groups by date of the first item
-        return duplicateGroups.sorted { ($0.items.first?.creationDate ?? Date.distantPast) > ($1.items.first?.creationDate ?? Date.distantPast) }
+                let sortedGroups = duplicateGroups.sorted { ($0.items.first?.creationDate ?? Date.distantPast) > ($1.items.first?.creationDate ?? Date.distantPast) }
+        return sortedGroups.enumerated().map { index, group in
+            DuplicateGroup(
+                id: group.id,
+                title: "Group \(index + 1)",
+                items: group.items,
+                recommendedItem: group.recommendedItem,
+                rankedItems: group.rankedItems
+            )
+        }
     }
 }

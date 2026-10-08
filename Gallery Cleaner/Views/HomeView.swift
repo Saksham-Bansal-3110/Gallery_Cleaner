@@ -15,40 +15,40 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(.systemBackground).ignoresSafeArea()
                 
                 if viewModel.scanState == .idle || viewModel.scanState == .requestingPermission {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
                 } else if case .scanning = viewModel.scanState {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: .primary))
                 } else if viewModel.scanState == .permissionDenied {
                     VStack {
                         Text("Permission Denied")
                             .font(.title)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.primary)
                         Text("Please allow photo library access in Settings.")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 } else if case let .failed(errorMsg) = viewModel.scanState {
                     VStack {
                         Text("Scan Failed")
                             .font(.title)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.primary)
                         Text(errorMsg)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 } else if viewModel.scanState == .completed && viewModel.allItems.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "photo.on.rectangle.angled")
                             .font(.system(size: 64))
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                         Text("No Media Found")
                             .font(.title)
-                            .foregroundColor(.white)
+                            .foregroundStyle(.primary)
                         Text("Your photo library appears to be empty.")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 } else {
                     mainContentView
@@ -59,6 +59,7 @@ struct HomeView: View {
                 CategoryDetailView(title: title, categoryType: categoryType)
             }
             .navigationBarHidden(true)
+            .scrollIndicators(.hidden)
         }
         .task {
             if viewModel.scanState == .idle {
@@ -72,20 +73,20 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Title
                 Text("Gallery Cleaner")
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.largeTitle)
+                    .foregroundStyle(.primary)
                     .padding(.top, 8)
                 
                 // What's Taking Space Card
                 VStack(alignment: .leading, spacing: 16) {
                     Text("What's Taking Space?")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
                     
                     StorageOverviewView(segments: chartSegments)
                 }
                 .padding(20)
-                .background(Color(white: 0.12))
+                .background(Color(.secondarySystemGroupedBackground))
                 .cornerRadius(20)
                 
                 // Categories
@@ -94,6 +95,7 @@ struct HomeView: View {
                     
                     if isLoading {
                         CategoryCard(
+                            icon: stat.systemImage,
                             title: stat.title,
                             itemsCount: 0,
                             totalSize: "Calculating...",
@@ -104,6 +106,7 @@ struct HomeView: View {
                     } else {
                         NavigationLink(value: stat.categoryType) {
                             CategoryCard(
+                                icon: stat.systemImage,
                                 title: stat.title,
                                 itemsCount: stat.itemCount,
                                 totalSize: viewModel.formatSize(stat.totalSize),

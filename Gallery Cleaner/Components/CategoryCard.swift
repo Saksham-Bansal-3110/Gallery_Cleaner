@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct CategoryCard: View {
+    var icon: String
     var title: String
     var itemsCount: Int
     var totalSize: String
@@ -18,31 +19,40 @@ struct CategoryCard: View {
             
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(title)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(.white)
+                        HStack(spacing: 8) {
+                            Image(systemName: icon)
+                                .font(.title3)
+                                .foregroundStyle(.primary)
+                                .accessibilityHidden(true)
+                            Text(title)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(.primary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(title)
+                        
                         Text("\(itemsCount) Items • \(totalSize)")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color(white: 0.6))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
                 }
             
             if isLoading {
                 VStack(spacing: 8) {
-                    ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .primary))
                     Text("Scanning...")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(white: 0.5))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 100)
             } else if items.isEmpty {
                 Text("No items found")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color(white: 0.5))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .frame(height: 100)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -62,7 +72,7 @@ struct CategoryCard: View {
             }
         }
         .padding(16)
-        .background(Color(white: 0.12))
+        .background(Color(.secondarySystemGroupedBackground))
         .contentShape(Rectangle())
         .cornerRadius(20)
     }

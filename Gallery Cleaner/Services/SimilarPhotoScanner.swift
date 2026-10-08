@@ -70,6 +70,15 @@ public class SimilarPhotoScanner: SimilarPhotoScanning {
             }
         }
         
-        return similarGroups
+                let sortedGroups = similarGroups
+        return sortedGroups.enumerated().map { index, group in
+            DuplicateGroup(
+                id: group.id,
+                title: "Group \(index + 1)",
+                items: group.items,
+                recommendedItem: group.recommendedItem,
+                rankedItems: group.rankedItems
+            )
+        }
     }
 }

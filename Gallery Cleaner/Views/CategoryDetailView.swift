@@ -69,20 +69,20 @@ struct CategoryDetailView: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground).ignoresSafeArea()
             
             VStack(spacing: 0) {
                 if itemsCount == 0 {
                     Spacer()
                     Text("No Items")
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.secondary)
                     Spacer()
                 } else {
                     ScrollView {
                         VStack {
                             Text(itemsCountText)
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(white: 0.6))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                                 .padding(.vertical, 8)
                         }
                         switch displayStyle {
@@ -109,6 +109,7 @@ struct CategoryDetailView: View {
                                     }
                                     .aspectRatio(1, contentMode: .fit)
                                     .opacity(isDeleting ? 0.5 : 1.0)
+                                    .animation(.default, value: isDeleting)
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -128,10 +129,10 @@ struct CategoryDetailView: View {
                                             }) {
                                                 Image(systemName: selectedItems.contains(item.id) ? "checkmark.circle.fill" : "circle")
                                                     .font(.system(size: 20))
-                                                    .foregroundColor(selectedItems.contains(item.id) ? .blue : .white)
+                                                    .foregroundStyle(selectedItems.contains(item.id) ? .blue : .primary)
                                                     .background(
                                                         Circle()
-                                                            .fill(selectedItems.contains(item.id) ? Color.white : Color.clear)
+                                                            .fill(selectedItems.contains(item.id) ? Color(.systemBackground) : Color.clear)
                                                             .frame(width: 18, height: 18)
                                                     )
                                             }
@@ -153,21 +154,21 @@ struct CategoryDetailView: View {
                                         
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(item.filename ?? "Unknown")
-                                                .font(.system(size: 16, weight: .medium))
-                                                .foregroundColor(.white)
+                                                .font(.body.weight(.medium))
+                                                .foregroundStyle(.primary)
                                                 .lineLimit(1)
                                             
                                             HStack(spacing: 8) {
                                                 Text(item.formattedSize)
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(Color(white: 0.6))
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
                                                 
                                                 if let duration = item.formattedDuration {
                                                     Text("•")
-                                                        .foregroundColor(Color(white: 0.4))
+                                                        .foregroundStyle(Color(.tertiaryLabel))
                                                     Text(duration)
-                                                        .font(.system(size: 14))
-                                                        .foregroundColor(Color(white: 0.6))
+                                                        .font(.subheadline)
+                                                        .foregroundStyle(.secondary)
                                                 }
                                             }
                                         }
@@ -175,10 +176,11 @@ struct CategoryDetailView: View {
                                     }
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 16)
-                                    .background(Color(white: 0.12))
+                                    .background(Color(.secondarySystemGroupedBackground))
                                     .cornerRadius(12)
                                     .padding(.horizontal, 16)
                                     .opacity(isDeleting ? 0.5 : 1.0)
+                                    .animation(.default, value: isDeleting)
                                 }
                             }
                             
@@ -192,6 +194,7 @@ struct CategoryDetailView: View {
                                         isSelectionMode: isSelectionMode
                                     )
                                     .opacity(isDeleting ? 0.5 : 1.0)
+                                    .animation(.default, value: isDeleting)
                                     .disabled(isDeleting)
                                 }
                             }
@@ -203,8 +206,8 @@ struct CategoryDetailView: View {
                         if isSelectionMode {
                             VStack(spacing: 8) {
                                 Text("\(selectedItems.count) Selected • \(viewModel.formatSize(viewModel.totalSize(for: selectedMediaItems)))")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
                                     .padding(.top, 12)
                                 
                                 SelectionToolbar(onSelectAll: {
@@ -228,7 +231,7 @@ struct CategoryDetailView: View {
                                 })
                                 .disabled(isDeleting)
                             }
-                            .background(Color.black.opacity(0.95))
+                            .background(Color(.systemBackground).opacity(0.95))
                         }
                     }
                 }
@@ -236,12 +239,12 @@ struct CategoryDetailView: View {
 
             
             if isDeleting {
-                Color.black.opacity(0.4).ignoresSafeArea()
+                Color(.systemBackground).opacity(0.4).ignoresSafeArea()
                 ProgressView("Deleting & Refreshing...")
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     .padding(24)
-                    .background(Color(white: 0.2))
+                    .background(Color(.tertiarySystemFill))
                     .cornerRadius(16)
             }
         }

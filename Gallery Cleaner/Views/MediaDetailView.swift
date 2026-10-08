@@ -85,7 +85,7 @@ struct MediaInfoSheet: View {
             List {
                 Section(header: Text("Media Information").font(.headline).padding(.bottom, 4)) {
                     HStack {
-                        Text("Type").foregroundColor(.secondary)
+                        Text("Type").foregroundStyle(.secondary)
                         Spacer()
                         if item.mediaType == .video {
                             Text("Video")
@@ -98,7 +98,7 @@ struct MediaInfoSheet: View {
                     
                     if let date = item.creationDate {
                         HStack {
-                            Text("Date Taken").foregroundColor(.secondary)
+                            Text("Date Taken").foregroundStyle(.secondary)
                             Spacer()
                             Text(date, format: .dateTime.month().day().year())
                         }
@@ -106,20 +106,20 @@ struct MediaInfoSheet: View {
                     
                     if item.mediaType == .video, let duration = item.formattedDuration {
                         HStack {
-                            Text("Duration").foregroundColor(.secondary)
+                            Text("Duration").foregroundStyle(.secondary)
                             Spacer()
                             Text(duration)
                         }
                     }
                     
                     HStack {
-                        Text("Dimensions").foregroundColor(.secondary)
+                        Text("Dimensions").foregroundStyle(.secondary)
                         Spacer()
-                        Text("\\(item.pixelWidth) × \\(item.pixelHeight)")
+                        Text("\(item.pixelWidth) × \(item.pixelHeight)")
                     }
                     
                     HStack {
-                        Text("File Size").foregroundColor(.secondary)
+                        Text("File Size").foregroundStyle(.secondary)
                         Spacer()
                         Text(item.formattedSize)
                     }
@@ -159,17 +159,17 @@ struct MediaInfoSheet: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(.systemBackground).ignoresSafeArea()
                 
                 if item.mediaType == .video {
                     if let player = viewModel.player {
                         VideoPlayer(player: player)
                             .ignoresSafeArea(edges: .bottom)
                     } else if viewModel.isLoading {
-                        ProgressView().progressViewStyle(.circular).tint(.white)
+                        ProgressView().progressViewStyle(.circular).tint(.primary)
                     } else if viewModel.loadError {
                         Text("Unable to Load Video")
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 } else {
                     if let image = viewModel.image {
@@ -190,11 +190,11 @@ struct MediaInfoSheet: View {
                                     }
                             )
                     } else if viewModel.isLoading {
-                        ProgressView().progressViewStyle(.circular).tint(.white)
+                        ProgressView().progressViewStyle(.circular).tint(.primary)
                     } else if viewModel.loadError {
                         VStack {
-                            Image(systemName: "exclamationmark.triangle").font(.system(size: 40)).foregroundColor(.gray)
-                            Text("Failed to load image").foregroundColor(.gray).padding(.top, 8)
+                            Image(systemName: "exclamationmark.triangle").font(.system(size: 40)).foregroundStyle(.secondary)
+                            Text("Failed to load image").foregroundStyle(.secondary).padding(.top, 8)
                         }
                     }
                 }
@@ -211,12 +211,12 @@ struct MediaInfoSheet: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 16) {
                     Button(action: { showingInfo = true }) {
-                        Image(systemName: "info.circle").foregroundColor(.blue)
+                        Image(systemName: "info.circle").foregroundStyle(.blue)
                     }
                     .accessibilityLabel("Media information")
                     
                     Button(action: { showDeleteConfirmation = true }) {
-                        Image(systemName: "trash").foregroundColor(.red)
+                        Image(systemName: "trash").foregroundStyle(.red)
                     }
                     .accessibilityLabel("Delete media")
                 }
@@ -244,7 +244,7 @@ struct MediaInfoSheet: View {
                 try await galleryViewModel.deleteItems(withIDs: [item.id])
                 dismiss()
             } catch {
-                print("Failed to delete item: \\(error)")
+                print("Failed to delete item: \(error)")
             }
         }
     }

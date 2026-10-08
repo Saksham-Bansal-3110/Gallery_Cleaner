@@ -26,7 +26,7 @@ struct GalleryCleanerApp: App {
     
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            RootView()
                 .environmentObject(galleryViewModel)
                 .task {
                     #if DEBUG

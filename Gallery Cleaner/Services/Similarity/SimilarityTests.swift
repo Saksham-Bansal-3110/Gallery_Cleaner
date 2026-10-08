@@ -7,6 +7,7 @@ public struct SimilarityTests {
         testClustererCaseABC()
         testClustererCaseSplit()
         testClustererMissingEdgeABC()
+        testThresholds()
         print("Completed SimilarityTests.")
     }
     
@@ -54,6 +55,40 @@ public struct SimilarityTests {
         assert(groups.count <= 1)
         if let g = groups.first {
             assert(g.count == 2)
+        }
+    }
+    
+    private static func testThresholds() {
+        let clusterer = SimilarityClusterer()
+        
+        let testCases: [(Float, Bool)] = [
+            (0.5, true),
+            (1.0, true),
+            (1.9, true),
+            (2.49, true),
+            (2.5, false),
+            (3.0, false),
+            (5.0, false),
+            (10.0, false)
+        ]
+        
+        for (idx, test) in testCases.enumerated() {
+            let distance = test.0
+            let expectedSimilar = test.1
+            
+            let id1 = "A\\(idx)"
+            let id2 = "B\\(idx)"
+            
+            let scores = [
+                SimilarityScore(firstID: id1, secondID: id2, distance: distance, reasons: [.temporal])
+            ]
+            let groups = clusterer.cluster(scores: scores)
+            
+            if expectedSimilar {
+                assert(groups.count == 1 && groups[0].count == 2, "Distance \\(distance) should be grouped as similar")
+            } else {
+                assert(groups.isEmpty || (groups.count == 1 && groups[0].count < 2), "Distance \\(distance) should NOT be grouped")
+            }
         }
     }
 }

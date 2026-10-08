@@ -22,7 +22,7 @@ struct StorageDonutChart: View {
             // Donut Chart
             ZStack {
                 Circle()
-                    .stroke(Color(white: 0.2), lineWidth: 12)
+                    .stroke(Color(.tertiarySystemFill), lineWidth: 12)
                 
                 let total = segments.reduce(0) { $0 + $1.value }
                 let currentAngle: Double = -90
@@ -53,8 +53,8 @@ struct StorageDonutChart: View {
                             .frame(width: 8, height: 8)
                             .cornerRadius(2)
                         Text(segment.label)
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
+                            .font(.caption)
+                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -101,7 +101,7 @@ struct StorageDonutChartView: View {
             ZStack {
                 if segments.isEmpty {
                     Circle()
-                        .stroke(Color(white: 0.3), style: StrokeStyle(lineWidth: 12, lineCap: .butt))
+                        .stroke(Color(.tertiaryLabel), style: StrokeStyle(lineWidth: 12, lineCap: .butt))
                         .frame(width: 150, height: 150)
                 } else {
                     DonutChartShape(segments: segments)
@@ -111,8 +111,8 @@ struct StorageDonutChartView: View {
             VStack(alignment: .leading, spacing: 6) {
                 if segments.isEmpty {
                     Text("No Media Yet")
-                        .foregroundColor(.gray)
-                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
                 } else {
                     ForEach(segments) { segment in
                         HStack(spacing: 6) {
@@ -122,15 +122,15 @@ struct StorageDonutChartView: View {
                                 .cornerRadius(2)
                                 .layoutPriority(2)
                             Text(segment.label)
-                                .font(.system(size: 12, weight: .regular))
-                                .foregroundColor(.white)
+                                .font(.caption)
+                                .foregroundStyle(.primary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                                 .layoutPriority(1)
                             Spacer(minLength: 4)
                             Text(segment.formattedValue)
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(Color(white: 0.7))
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(Color(.secondaryLabel))
                                 .lineLimit(1)
                                 .fixedSize(horizontal: true, vertical: false)
                         }
@@ -140,7 +140,7 @@ struct StorageDonutChartView: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 24)
-        .background(Color(white: 0.12))
+        .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(20)
     }
 }

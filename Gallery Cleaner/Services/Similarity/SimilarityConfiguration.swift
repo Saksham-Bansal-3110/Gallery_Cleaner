@@ -5,10 +5,10 @@ public struct SimilarityConfiguration {
     public static let shared = SimilarityConfiguration()
     
     // Versioning
-    public let algorithmVersion: Int = 1
+    public let algorithmVersion: Int = 2
     
     // Thresholds
-    public let strongSimilarityThreshold: Float = 10.0
+    public let strongSimilarityThreshold: Float = 2.5
     public let weakSimilarityThreshold: Float = 14.0
     
     // Perceptual Hash bounds
