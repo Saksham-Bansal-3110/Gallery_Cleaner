@@ -32,6 +32,7 @@ struct GalleryCleanerApp: App {
                     #if DEBUG
                     await PhotoAnalysisTests.runAll(container: container)
                     await SimilarityTests.runAll()
+                    CategorySortTests.runAll()
                     PhotoRankingTests.runAll()
                     #endif
                 }

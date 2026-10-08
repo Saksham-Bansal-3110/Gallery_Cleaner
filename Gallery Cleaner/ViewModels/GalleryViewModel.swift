@@ -10,6 +10,8 @@ import UIKit
 
 import SwiftUI
 
+import SwiftUI
+
 public enum CategoryType {
     case screenshots
     case videos
@@ -26,6 +28,17 @@ public enum CategoryType {
         case .similarPhotos: return "square.stack.3d.up"
         case .duplicateVideos: return "rectangle.on.rectangle"
         case .largeVideos: return "externaldrive.fill"
+        }
+    }
+    
+    public var color: Color {
+        switch self {
+        case .screenshots: return Color.red
+        case .videos: return Color.blue
+        case .duplicatePhotos: return Color.purple
+        case .similarPhotos: return Color.indigo
+        case .duplicateVideos: return Color.cyan
+        case .largeVideos: return Color.orange
         }
     }
 }

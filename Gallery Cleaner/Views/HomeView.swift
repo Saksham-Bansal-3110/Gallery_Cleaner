@@ -96,6 +96,7 @@ struct HomeView: View {
                     if isLoading {
                         CategoryCard(
                             icon: stat.systemImage,
+                            categoryColor: stat.categoryType.color,
                             title: stat.title,
                             itemsCount: 0,
                             totalSize: "Calculating...",
@@ -107,6 +108,7 @@ struct HomeView: View {
                         NavigationLink(value: stat.categoryType) {
                             CategoryCard(
                                 icon: stat.systemImage,
+                            categoryColor: stat.categoryType.color,
                                 title: stat.title,
                                 itemsCount: stat.itemCount,
                                 totalSize: viewModel.formatSize(stat.totalSize),

@@ -7,6 +7,7 @@ import SwiftUI
 
 struct CategoryCard: View {
     var icon: String
+    var categoryColor: Color
     var title: String
     var itemsCount: Int
     var totalSize: String
@@ -19,11 +20,8 @@ struct CategoryCard: View {
             
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Image(systemName: icon)
-                                .font(.title3)
-                                .foregroundStyle(.primary)
-                                .accessibilityHidden(true)
+                        HStack(spacing: 12) {
+                            CategoryIcon(systemImage: icon, color: categoryColor)
                             Text(title)
                                 .font(.title3.weight(.semibold))
                                 .foregroundStyle(.primary)

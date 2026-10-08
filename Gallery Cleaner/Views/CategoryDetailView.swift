@@ -13,15 +13,99 @@ struct CategoryDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var isSelectionMode = false
     @State private var selectedItems: Set<String> = []
+    @State private var sortOption: MediaSortOption = .defaultOrder
+    @State private var showSortSheet = false
     
-    var displayStyle: CategoryDisplayStyle {
+    var rawItems: [MediaItem] {
         switch categoryType {
-        case .screenshots: return .grid(items: viewModel.screenshots)
-        case .videos: return .grid(items: viewModel.videos)
-        case .duplicatePhotos: return .grouped(groups: viewModel.duplicatePhotos)
-        case .similarPhotos: return .grouped(groups: viewModel.similarPhotos)
-        case .duplicateVideos: return .grouped(groups: viewModel.duplicateVideos)
-        case .largeVideos: return .list(items: viewModel.largeVideos)
+        case .screenshots: return viewModel.screenshots
+        case .videos: return viewModel.videos
+        case .largeVideos: return viewModel.largeVideos
+        default: return []
+        }
+    }
+    
+    var rawGroups: [DuplicateGroup] {
+        switch categoryType {
+        case .duplicatePhotos: return viewModel.duplicatePhotos
+        case .similarPhotos: return viewModel.similarPhotos
+        case .duplicateVideos: return viewModel.duplicateVideos
+        default: return []
+        }
+    }
+    
+    var sortedItems: [MediaItem] {
+        switch sortOption {
+        case .defaultOrder: return rawItems
+        case .newest: 
+            return rawItems.sorted { 
+                let d1 = $0.creationDate ?? .distantPast
+                let d2 = $1.creationDate ?? .distantPast
+                if d1 == d2 { return $0.id > $1.id }
+                return d1 > d2
+            }
+        case .oldest: 
+            return rawItems.sorted { 
+                let d1 = $0.creationDate ?? .distantPast
+                let d2 = $1.creationDate ?? .distantPast
+                if d1 == d2 { return $0.id < $1.id }
+                return d1 < d2
+            }
+        case .largest: 
+            return rawItems.sorted { 
+                if $0.sizeInBytes == $1.sizeInBytes { return $0.id > $1.id }
+                return $0.sizeInBytes > $1.sizeInBytes 
+            }
+        case .smallest: 
+            return rawItems.sorted { 
+                if $0.sizeInBytes == $1.sizeInBytes { return $0.id < $1.id }
+                return $0.sizeInBytes < $1.sizeInBytes 
+            }
+        }
+    }
+    
+    var sortedGroups: [DuplicateGroup] {
+        switch sortOption {
+        case .defaultOrder: return rawGroups
+        case .newest:
+            return rawGroups.sorted {
+                let max1 = $0.items.compactMap { $0.creationDate }.max() ?? .distantPast
+                let max2 = $1.items.compactMap { $0.creationDate }.max() ?? .distantPast
+                if max1 == max2 { return $0.id > $1.id }
+                return max1 > max2
+            }
+        case .oldest:
+            return rawGroups.sorted {
+                let min1 = $0.items.compactMap { $0.creationDate }.min() ?? .distantPast
+                let min2 = $1.items.compactMap { $0.creationDate }.min() ?? .distantPast
+                if min1 == min2 { return $0.id < $1.id }
+                return min1 < min2
+            }
+        case .largest:
+            return rawGroups.sorted {
+                let size1 = $0.items.map { $0.sizeInBytes }.reduce(0, +)
+                let size2 = $1.items.map { $0.sizeInBytes }.reduce(0, +)
+                if size1 == size2 { return $0.id > $1.id }
+                return size1 > size2
+            }
+        case .smallest:
+            return rawGroups.sorted {
+                let size1 = $0.items.map { $0.sizeInBytes }.reduce(0, +)
+                let size2 = $1.items.map { $0.sizeInBytes }.reduce(0, +)
+                if size1 == size2 { return $0.id < $1.id }
+                return size1 < size2
+            }
+        }
+    }
+    
+    var activeDisplayStyle: CategoryDisplayStyle {
+        switch categoryType {
+        case .screenshots, .videos:
+            return .grid(items: sortedItems)
+        case .largeVideos:
+            return .list(items: sortedItems)
+        case .duplicatePhotos, .similarPhotos, .duplicateVideos:
+            return .grouped(groups: sortedGroups)
         }
     }
     
@@ -32,7 +116,7 @@ struct CategoryDetailView: View {
     ]
     
     var allItemIDs: Set<String> {
-        switch displayStyle {
+        switch activeDisplayStyle {
         case .grid(let items), .list(let items):
             return Set(items.map { $0.id })
         case .grouped(let groups):
@@ -41,7 +125,7 @@ struct CategoryDetailView: View {
     }
     
     var allItemsList: [MediaItem] {
-        switch displayStyle {
+        switch activeDisplayStyle {
         case .grid(let items), .list(let items):
             return items
         case .grouped(let groups):
@@ -85,7 +169,7 @@ struct CategoryDetailView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.vertical, 8)
                         }
-                        switch displayStyle {
+                        switch activeDisplayStyle {
                         case .grid(let items):
                             LazyVGrid(columns: columns, spacing: 8) {
                                 ForEach(items) { item in
@@ -212,7 +296,7 @@ struct CategoryDetailView: View {
                                 
                                 SelectionToolbar(onSelectAll: {
                                     let targetIDs: Set<String>
-                                    if case .grouped(let groups) = displayStyle, categoryType != .similarPhotos {
+                                    if case .grouped(let groups) = activeDisplayStyle, categoryType != .similarPhotos {
                                         let safeIDs = groups.flatMap { $0.items.dropFirst() }.map { $0.id }
                                         targetIDs = Set(safeIDs)
                                     } else {
@@ -252,6 +336,13 @@ struct CategoryDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
+                if !isSelectionMode && itemsCount > 0 {
+                    Button(action: { showSortSheet = true }) {
+                        Image(systemName: sortOption == .defaultOrder ? "arrow.up.arrow.down.circle" : "arrow.up.arrow.down.circle.fill")
+                    }
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
                 if isSelectionMode {
                     Button("Cancel") {
                         isSelectionMode = false
@@ -261,7 +352,7 @@ struct CategoryDetailView: View {
                 } else {
                     Button("Select") {
                         isSelectionMode = true
-                        if case .grouped(let groups) = displayStyle, categoryType != .similarPhotos {
+                        if case .grouped(let groups) = activeDisplayStyle, categoryType != .similarPhotos {
                             for group in groups {
                                 let itemsToSelect = group.items.dropFirst()
                                 for item in itemsToSelect {
@@ -293,6 +384,10 @@ struct CategoryDetailView: View {
         }
         .navigationDestination(for: MediaItem.self) { item in
             MediaDetailView(item: item)
+        }
+        .sheet(isPresented: $showSortSheet) {
+            MediaSortSheet(sortOption: $sortOption)
+                .presentationDetents([.medium])
         }
     }
     
