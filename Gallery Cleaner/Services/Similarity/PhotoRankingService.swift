@@ -18,14 +18,14 @@ public struct PhotoQualityScore: Sendable {
     public let reasons: [QualityReason]
 }
 
-public class PhotoRankingDiagnostics {
+public struct PhotoRankingDiagnostics: Sendable {
     public var groupsRanked: Int = 0
     public var totalRankingTime: TimeInterval = 0
     public var recommendationReasons: [QualityReason: Int] = [:]
     
     public init() {}
     
-    func record(time: TimeInterval, topReasons: [QualityReason]) {
+    mutating func record(time: TimeInterval, topReasons: [QualityReason]) {
         groupsRanked += 1
         totalRankingTime += time
         for r in topReasons {

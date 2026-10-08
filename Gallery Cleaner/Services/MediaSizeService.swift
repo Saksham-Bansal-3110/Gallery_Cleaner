@@ -22,7 +22,7 @@ public actor MediaSizeService {
             DispatchQueue.global(qos: .userInitiated).async {
                 let resources = PHAssetResource.assetResources(for: asset)
                 let totalSize = resources.compactMap { $0.value(forKey: "fileSize") as? Int64 }.reduce(0, +)
-                let filename = resources.first?.originalFilename
+                let filename = resources.first?.filename
                 
                 #if DEBUG
                 if totalSize == 0 {

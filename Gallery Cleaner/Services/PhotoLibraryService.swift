@@ -72,7 +72,7 @@ class PhotoLibraryManager: PhotoLibraryService {
         options.isNetworkAccessAllowed = true
         options.resizeMode = .fast
         
-        let scale = UIScreen.main.scale
+        let scale = UITraitCollection.current.displayScale
         let pixelSize = CGSize(width: targetSize.width * scale, height: targetSize.height * scale)
         
         return imageManager.requestImage(for: item.asset, targetSize: pixelSize, contentMode: .aspectFill, options: options) { image, _ in

@@ -90,15 +90,29 @@ struct HomeView: View {
                 
                 // Categories
                 ForEach(orderedStatistics) { stat in
-                    NavigationLink(value: stat.categoryType) {
+                    let isLoading = stat.categoryType == .similarPhotos && viewModel.isScanningSimilarPhotos
+                    
+                    if isLoading {
                         CategoryCard(
                             title: stat.title,
-                            itemsCount: stat.itemCount,
-                            totalSize: viewModel.formatSize(stat.totalSize),
-                            items: stat.previewItems
+                            itemsCount: 0,
+                            totalSize: "Calculating...",
+                            items: [],
+                            isLoading: true
                         ) {}
+                        .disabled(true)
+                    } else {
+                        NavigationLink(value: stat.categoryType) {
+                            CategoryCard(
+                                title: stat.title,
+                                itemsCount: stat.itemCount,
+                                totalSize: viewModel.formatSize(stat.totalSize),
+                                items: stat.previewItems,
+                                isLoading: false
+                            ) {}
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .padding(.horizontal, 16)

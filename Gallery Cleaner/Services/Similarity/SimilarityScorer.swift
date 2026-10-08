@@ -8,7 +8,7 @@ public struct SimilarityScore: Sendable {
     public let reasons: Set<CandidateReason>
 }
 
-public class SimilarityScorerDiagnostics {
+public struct SimilarityScorerDiagnostics: Sendable {
     public var scoredPairs: Int = 0
     public var allDistances: [Float] = []
     public var distanceBuckets: [String: Int] = [
@@ -19,7 +19,7 @@ public class SimilarityScorerDiagnostics {
     
     public init() {}
     
-    func record(distance: Float) {
+    mutating func record(distance: Float) {
         scoredPairs += 1
         allDistances.append(distance)
         
@@ -67,7 +67,9 @@ public actor SimilarityScorer {
                 
                 if distance > 0.05 {
                     scores.append(SimilarityScore(firstID: pair.firstID, secondID: pair.secondID, distance: distance, reasons: pair.reasons))
-                    diagnostics.record(distance: distance)
+                    var d = diagnostics
+d.record(distance: distance)
+diagnostics = d
                 }
             } catch {
                 print("SimilarityScorer: Failed to compute distance for pair \\(pair.firstID) & \\(pair.secondID)")

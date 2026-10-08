@@ -58,7 +58,7 @@ public class DuplicateVideoScanner: DuplicateVideoScanning {
             var title = "Group \(groupIndex)"
             if let firstAsset = sortedItems.first?.asset {
                 let resources = PHAssetResource.assetResources(for: firstAsset)
-                if let filename = resources.first?.originalFilename {
+                if let filename = resources.first?.filename {
                     title = filename
                 }
             }

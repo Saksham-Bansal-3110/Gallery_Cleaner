@@ -41,21 +41,34 @@ struct DuplicateGroupView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(group.items) { item in
-                            MediaThumbnail(
-                                item: item,
-                                isSelected: selectedItems.contains(item.id),
-                                isSelectionMode: isSelectionMode,
-                                isRecommended: group.recommendedItem?.id == item.id,
-                                onTap: {
-                                    if isSelectionMode {
-                                        if selectedItems.contains(item.id) {
-                                            selectedItems.remove(item.id)
-                                        } else {
-                                            selectedItems.insert(item.id)
-                                        }
+                            Group {
+                                if isSelectionMode {
+                                    Button(action: {
+                                        if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
+                                        else { selectedItems.insert(item.id) }
+                                    }) {
+                                        MediaThumbnail(
+                                            item: item,
+                                            isSelected: selectedItems.contains(item.id),
+                                            isSelectionMode: isSelectionMode,
+                                            isRecommended: group.recommendedItem?.id == item.id,
+                                            onTap: {}
+                                        )
                                     }
+                                    .buttonStyle(PlainButtonStyle())
+                                } else {
+                                    NavigationLink(value: item) {
+                                        MediaThumbnail(
+                                            item: item,
+                                            isSelected: false,
+                                            isSelectionMode: false,
+                                            isRecommended: group.recommendedItem?.id == item.id,
+                                            onTap: {}
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
-                            )
+                            }
                             .frame(width: 120, height: 120)
                         }
                     }
@@ -63,20 +76,34 @@ struct DuplicateGroupView: View {
             } else {
                 HStack(spacing: 12) {
                     ForEach(group.items) { item in
-                        MediaThumbnail(
-                            item: item,
-                            isSelected: selectedItems.contains(item.id),
-                            isSelectionMode: isSelectionMode,
-                            onTap: {
-                                if isSelectionMode {
-                                    if selectedItems.contains(item.id) {
-                                        selectedItems.remove(item.id)
-                                    } else {
-                                        selectedItems.insert(item.id)
-                                    }
+                        Group {
+                            if isSelectionMode {
+                                Button(action: {
+                                    if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
+                                    else { selectedItems.insert(item.id) }
+                                }) {
+                                    MediaThumbnail(
+                                        item: item,
+                                        isSelected: selectedItems.contains(item.id),
+                                        isSelectionMode: isSelectionMode,
+                                        isRecommended: group.recommendedItem?.id == item.id,
+                                        onTap: {}
+                                    )
                                 }
+                                .buttonStyle(PlainButtonStyle())
+                            } else {
+                                NavigationLink(value: item) {
+                                    MediaThumbnail(
+                                        item: item,
+                                        isSelected: false,
+                                        isSelectionMode: false,
+                                        isRecommended: group.recommendedItem?.id == item.id,
+                                        onTap: {}
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                        )
+                        }
                         .frame(maxWidth: .infinity)
                         .aspectRatio(1, contentMode: .fit)
                     }

@@ -1,8 +1,3 @@
-//
-//  MediaThumbnail.swift
-//  Gallery Cleaner
-//
-
 import SwiftUI
 import Photos
 
@@ -11,7 +6,7 @@ struct MediaThumbnail: View {
     var isSelected: Bool
     var isSelectionMode: Bool
     var isRecommended: Bool = false
-    var onTap: () -> Void
+    var onTap: () -> Void // Keeping for API compatibility, but unused internally
     
     @EnvironmentObject var galleryViewModel: GalleryViewModel
     @State private var thumbnailImage: UIImage?
@@ -90,9 +85,7 @@ struct MediaThumbnail: View {
                 }
             }
         }
-        .onTapGesture {
-            onTap()
-        }
+        .contentShape(Rectangle())
         .onAppear {
             loadImage()
         }
@@ -104,7 +97,6 @@ struct MediaThumbnail: View {
     }
     
     private func loadImage() {
-        // Approximate size for a grid cell
         let targetSize = CGSize(width: 120, height: 120)
         imageRequestID = galleryViewModel.photoLibraryService.requestThumbnail(for: item, targetSize: targetSize) { image in
             if let image = image {

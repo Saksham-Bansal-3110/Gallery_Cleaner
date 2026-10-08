@@ -2,18 +2,25 @@ import Foundation
 import SwiftData
 import Photos
 
+public struct CachedAnalysis: Sendable {
+    public let result: PhotoAnalysisResult
+    public let algorithmVersion: Int
+}
+
+extension PhotoAnalysisResult: Sendable {}
+
 @ModelActor
 public actor PhotoAnalysisCache {
-    private var inMemoryCache = [String: AssetAnalysisDataWrapper]()
+    private var inMemoryCache = [String: CachedAnalysis]()
     private let maxMemoryCacheCount = 1000
-    private var cacheQueue = [String]() // for LRU eviction
+    private var cacheQueue = [String]()
     
     public func getCachedAnalysis(for asset: PHAsset) -> PhotoAnalysisResult? {
         let identifier = asset.localIdentifier
         
         // 1. Check in-memory cache
-        if let wrapper = inMemoryCache[identifier], isValid(wrapper.data, for: asset) {
-            return wrapper.data.toResult()
+        if let cached = inMemoryCache[identifier], isValid(cached, for: asset) {
+            return cached.result
         }
         
         // 2. Check SwiftData
@@ -22,13 +29,13 @@ public actor PhotoAnalysisCache {
         )
         
         do {
-            if let cached = try modelContext.fetch(descriptor).first {
+            if let cachedData = try modelContext.fetch(descriptor).first {
+                let cached = CachedAnalysis(result: cachedData.toResult(), algorithmVersion: cachedData.algorithmVersion)
                 if isValid(cached, for: asset) {
                     addToMemoryCache(cached)
-                    return cached.toResult()
+                    return cached.result
                 } else {
-                    // Invalidate stale cache
-                    modelContext.delete(cached)
+                    modelContext.delete(cachedData)
                     inMemoryCache.removeValue(forKey: identifier)
                     try modelContext.save()
                 }
@@ -40,9 +47,11 @@ public actor PhotoAnalysisCache {
     }
     
     public func saveAnalysis(_ result: PhotoAnalysisResult) {
-        let data = AssetAnalysisData(result: result, algorithmVersion: SimilarityConfiguration.shared.algorithmVersion)
+        let algoVersion = SimilarityConfiguration.shared.algorithmVersion
+        let data = AssetAnalysisData(result: result, algorithmVersion: algoVersion)
         
-        addToMemoryCache(data)
+        let cached = CachedAnalysis(result: result, algorithmVersion: algoVersion)
+        addToMemoryCache(cached)
         
         modelContext.insert(data)
         do {
@@ -52,12 +61,12 @@ public actor PhotoAnalysisCache {
         }
     }
     
-    private func addToMemoryCache(_ data: AssetAnalysisData) {
-        let identifier = data.localIdentifier
+    private func addToMemoryCache(_ cached: CachedAnalysis) {
+        let identifier = cached.result.localIdentifier
         if inMemoryCache[identifier] == nil {
             cacheQueue.append(identifier)
         }
-        inMemoryCache[identifier] = AssetAnalysisDataWrapper(data: data)
+        inMemoryCache[identifier] = cached
         
         if cacheQueue.count > maxMemoryCacheCount {
             let oldest = cacheQueue.removeFirst()
@@ -65,18 +74,12 @@ public actor PhotoAnalysisCache {
         }
     }
     
-    private func isValid(_ data: AssetAnalysisData, for asset: PHAsset) -> Bool {
+    private func isValid(_ cached: CachedAnalysis, for asset: PHAsset) -> Bool {
+        let data = cached.result
         if data.pixelWidth != asset.pixelWidth || data.pixelHeight != asset.pixelHeight { return false }
         if let assetModDate = asset.modificationDate, data.modificationDate != assetModDate { return false }
         if data.visionRevision != SimilarityConfiguration.shared.currentVisionRevision { return false }
-        if data.algorithmVersion != SimilarityConfiguration.shared.algorithmVersion { return false }
+        if cached.algorithmVersion != SimilarityConfiguration.shared.algorithmVersion { return false }
         return true
-    }
-}
-
-private class AssetAnalysisDataWrapper {
-    let data: AssetAnalysisData
-    init(data: AssetAnalysisData) {
-        self.data = data
     }
 }

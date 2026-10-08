@@ -10,6 +10,7 @@ struct CategoryCard: View {
     var itemsCount: Int
     var totalSize: String
     var items: [MediaItem]
+    var isLoading: Bool = false
     var action: () -> Void
     
     var body: some View {
@@ -30,7 +31,15 @@ struct CategoryCard: View {
                         .foregroundColor(.white)
                 }
             
-            if items.isEmpty {
+            if isLoading {
+                VStack(spacing: 8) {
+                    ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    Text("Scanning...")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(white: 0.5))
+                }
+                .frame(maxWidth: .infinity, minHeight: 100)
+            } else if items.isEmpty {
                 Text("No items found")
                     .font(.system(size: 14))
                     .foregroundColor(Color(white: 0.5))

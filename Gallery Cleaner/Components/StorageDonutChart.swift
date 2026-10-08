@@ -25,7 +25,7 @@ struct StorageDonutChart: View {
                     .stroke(Color(white: 0.2), lineWidth: 12)
                 
                 let total = segments.reduce(0) { $0 + $1.value }
-                var currentAngle: Double = -90
+                let currentAngle: Double = -90
                 
                 ForEach(segments) { segment in
                     let angle = (segment.value / total) * 360

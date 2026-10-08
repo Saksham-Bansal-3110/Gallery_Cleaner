@@ -41,7 +41,8 @@ class GalleryViewModel: ObservableObject {
     
     // We'll populate these later in the duplicate phase
     @Published var duplicatePhotos: [DuplicateGroup] = []
-    @Published var similarPhotos: [DuplicateGroup] = []
+        @Published var similarPhotos: [DuplicateGroup] = []
+    @Published var isScanningSimilarPhotos: Bool = false
     @Published var duplicateVideos: [DuplicateGroup] = []
     @Published var largeVideos: [MediaItem] = []
     
@@ -79,12 +80,16 @@ class GalleryViewModel: ObservableObject {
                 let duplicateVideoScanner = DuplicateVideoScanner()
                 self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: items)
                 
-                let similarScanner = SimilarPhotoScanner()
-                let exactIDs = Set(self.duplicatePhotos.flatMap { $0.items }.map { $0.id })
-                self.similarPhotos = await similarScanner.scanSimilarPhotos(from: items, exactDuplicateIDs: exactIDs)
-                
                 if progress >= 1.0 {
                     self.scanState = .completed
+                    // Kick off similar photos in the background
+                    self.isScanningSimilarPhotos = true
+                    Task {
+                        let similarScanner = SimilarPhotoScanner()
+                        let exactIDs = Set(self.duplicatePhotos.flatMap { $0.items }.map { $0.id })
+                        self.similarPhotos = await similarScanner.scanSimilarPhotos(from: self.allItems, exactDuplicateIDs: exactIDs)
+                        self.isScanningSimilarPhotos = false
+                    }
                 } else {
                     self.scanState = .scanning(progress: progress)
                 }
@@ -151,8 +156,12 @@ class GalleryViewModel: ObservableObject {
         let duplicateVideoScanner = DuplicateVideoScanner()
         self.duplicateVideos = await duplicateVideoScanner.scanDuplicates(from: allItems)
         
-        let similarScanner = SimilarPhotoScanner()
-        let exactIDs = Set(self.duplicatePhotos.flatMap { $0.items }.map { $0.id })
-        self.similarPhotos = await similarScanner.scanSimilarPhotos(from: allItems, exactDuplicateIDs: exactIDs)
+        self.isScanningSimilarPhotos = true
+        Task {
+            let similarScanner = SimilarPhotoScanner()
+            let exactIDs = Set(self.duplicatePhotos.flatMap { $0.items }.map { $0.id })
+            self.similarPhotos = await similarScanner.scanSimilarPhotos(from: self.allItems, exactDuplicateIDs: exactIDs)
+            self.isScanningSimilarPhotos = false
+        }
     }
 }

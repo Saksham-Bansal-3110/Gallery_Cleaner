@@ -89,17 +89,22 @@ struct CategoryDetailView: View {
                         case .grid(let items):
                             LazyVGrid(columns: columns, spacing: 8) {
                                 ForEach(items) { item in
-                                    MediaThumbnail(
-                                        item: item,
-                                        isSelected: selectedItems.contains(item.id),
-                                        isSelectionMode: isSelectionMode
-                                    ) {
-                                        if isSelectionMode && !isDeleting {
-                                            if selectedItems.contains(item.id) {
-                                                selectedItems.remove(item.id)
-                                            } else {
-                                                selectedItems.insert(item.id)
+                                    Group {
+                                        if isSelectionMode {
+                                            Button(action: {
+                                                if !isDeleting {
+                                                    if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
+                                                    else { selectedItems.insert(item.id) }
+                                                }
+                                            }) {
+                                                MediaThumbnail(item: item, isSelected: selectedItems.contains(item.id), isSelectionMode: isSelectionMode, onTap: {})
                                             }
+                                            .buttonStyle(PlainButtonStyle())
+                                        } else {
+                                            NavigationLink(value: item) {
+                                                MediaThumbnail(item: item, isSelected: false, isSelectionMode: false, onTap: {})
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
                                         }
                                     }
                                     .aspectRatio(1, contentMode: .fit)
@@ -133,9 +138,18 @@ struct CategoryDetailView: View {
                                             .disabled(isDeleting)
                                         }
                                         
-                                        MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
-                                            .frame(width: 80, height: 80)
-                                            .cornerRadius(8)
+                                        Group {
+                                            if isSelectionMode {
+                                                MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
+                                            } else {
+                                                NavigationLink(value: item) {
+                                                    MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                        }
+                                        .frame(width: 80, height: 80)
+                                        .cornerRadius(8)
                                         
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(item.filename ?? "Unknown")
@@ -273,6 +287,9 @@ struct CategoryDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(deleteError ?? "")
+        }
+        .navigationDestination(for: MediaItem.self) { item in
+            MediaDetailView(item: item)
         }
     }
     
