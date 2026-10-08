@@ -6,6 +6,7 @@ struct MediaThumbnail: View {
     var isSelected: Bool
     var isSelectionMode: Bool
     var isRecommended: Bool = false
+    var hideOverlays: Bool = false
     var onTap: () -> Void // Keeping for API compatibility, but unused internally
     
     @EnvironmentObject var galleryViewModel: GalleryViewModel
@@ -29,9 +30,10 @@ struct MediaThumbnail: View {
             }
             
             // Badges
-            VStack {
-                HStack {
-                    Text(item.formattedSize)
+            if !hideOverlays {
+                VStack {
+                    HStack {
+                        Text(item.formattedSize)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 6)
@@ -43,7 +45,7 @@ struct MediaThumbnail: View {
                 Spacer()
                 HStack {
                     if isRecommended {
-                        Text("Recommended")
+                        Text("Recommend")
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
@@ -65,6 +67,7 @@ struct MediaThumbnail: View {
                 }
             }
             .padding(6)
+            }
             
             // Selection Indicator
             if isSelectionMode {

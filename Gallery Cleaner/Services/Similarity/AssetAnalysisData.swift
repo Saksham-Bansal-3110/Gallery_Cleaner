@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-public struct PhotoAnalysisResult {
+public struct PhotoAnalysisResult: Sendable {
     public let localIdentifier: String
     public let modificationDate: Date
     public let pixelWidth: Int

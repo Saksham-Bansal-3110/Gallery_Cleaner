@@ -7,8 +7,6 @@ public struct CachedAnalysis: Sendable {
     public let algorithmVersion: Int
 }
 
-extension PhotoAnalysisResult: Sendable {}
-
 @ModelActor
 public actor PhotoAnalysisCache {
     private var inMemoryCache = [String: CachedAnalysis]()

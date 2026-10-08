@@ -18,20 +18,14 @@ public struct PhotoQualityScore: Sendable {
     public let reasons: [QualityReason]
 }
 
-public struct PhotoRankingDiagnostics: Sendable {
+@preconcurrency public struct PhotoRankingDiagnostics: Sendable {
     public var groupsRanked: Int = 0
     public var totalRankingTime: TimeInterval = 0
     public var recommendationReasons: [QualityReason: Int] = [:]
     
-    public init() {}
+    nonisolated public init() {}
     
-    mutating func record(time: TimeInterval, topReasons: [QualityReason]) {
-        groupsRanked += 1
-        totalRankingTime += time
-        for r in topReasons {
-            recommendationReasons[r, default: 0] += 1
-        }
-    }
+
 }
 
 public actor PhotoRankingService {
@@ -89,7 +83,11 @@ public actor PhotoRankingService {
         let topReasons = scores[recommended.id]?.reasons ?? []
         
         let elapsed = Date().timeIntervalSince(startTime)
-        diagnostics.record(time: elapsed, topReasons: topReasons)
+        diagnostics.groupsRanked += 1
+        diagnostics.totalRankingTime += elapsed
+        for r in topReasons {
+            diagnostics.recommendationReasons[r, default: 0] += 1
+        }
         
         return (recommended, rankedItems)
     }

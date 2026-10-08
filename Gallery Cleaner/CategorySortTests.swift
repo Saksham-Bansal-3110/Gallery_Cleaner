@@ -2,7 +2,7 @@ import Foundation
 import Photos
 import SwiftUI
 
-class MockPHAsset: PHAsset {
+class MockPHAsset: PHAsset, @unchecked Sendable {
     var mockCreationDate: Date?
     var mockLocalIdentifier: String
     

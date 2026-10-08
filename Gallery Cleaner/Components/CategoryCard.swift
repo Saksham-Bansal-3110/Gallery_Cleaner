@@ -70,7 +70,7 @@ struct CategoryCard: View {
             }
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color(.secondarySystemBackground))
         .contentShape(Rectangle())
         .cornerRadius(20)
     }

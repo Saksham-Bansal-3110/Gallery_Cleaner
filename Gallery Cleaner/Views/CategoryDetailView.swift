@@ -16,6 +16,78 @@ struct CategoryDetailView: View {
     @State private var sortOption: MediaSortOption = .defaultOrder
     @State private var showSortSheet = false
     
+    @AppStorage("gridColumnCount") private var baseColumnCount: Int = 3
+    @State private var pinchColumnCount: Int? = nil
+    
+    var currentColumnsCount: Int {
+        pinchColumnCount ?? baseColumnCount
+    }
+    
+    var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 8), count: currentColumnsCount)
+    }
+    
+    struct DateSection: Identifiable {
+        let id: Date
+        let title: String
+        let items: [MediaItem]
+    }
+    
+    var dateSections: [DateSection]? {
+        guard categoryType == .screenshots || categoryType == .videos else { return nil }
+        switch sortOption {
+        case .largest, .smallest: return nil
+        default: break
+        }
+        
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        
+        let grouped = Dictionary(grouping: sortedItems) { item in
+            calendar.startOfDay(for: item.creationDate ?? .distantPast)
+        }
+        
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
+        
+        let sections = grouped.map { (date, items) -> DateSection in
+            let title: String
+            if date == today { title = "Today" }
+            else if date == yesterday { title = "Yesterday" }
+            else if date == .distantPast { title = "Unknown Date" }
+            else { title = formatter.string(from: date) }
+            return DateSection(id: date, title: title, items: items)
+        }
+        
+        if sortOption == .oldest {
+            return sections.sorted { $0.id < $1.id }
+        } else {
+            return sections.sorted { $0.id > $1.id }
+        }
+    }
+    
+    var magnifyGesture: some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                guard categoryType == .screenshots || categoryType == .videos else { return }
+                let diff = Int((1.0 - value.magnification) * 3.0) // sensitivity
+                let newCount = max(2, min(6, baseColumnCount + diff))
+                if pinchColumnCount != newCount {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        pinchColumnCount = newCount
+                    }
+                }
+            }
+            .onEnded { _ in
+                if let newCount = pinchColumnCount {
+                    baseColumnCount = newCount
+                    pinchColumnCount = nil
+                }
+            }
+    }
+    
     var rawItems: [MediaItem] {
         switch categoryType {
         case .screenshots: return viewModel.screenshots
@@ -98,6 +170,31 @@ struct CategoryDetailView: View {
         }
     }
     
+    
+    @ViewBuilder
+    private func itemGridCell(item: MediaItem) -> some View {
+        Group {
+            if isSelectionMode {
+                Button(action: {
+                    if !isDeleting {
+                        if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
+                        else { selectedItems.insert(item.id) }
+                    }
+                }) {
+                    MediaThumbnail(item: item, isSelected: selectedItems.contains(item.id), isSelectionMode: isSelectionMode, hideOverlays: categoryType == .largeVideos, onTap: {})
+                }
+                .buttonStyle(PlainButtonStyle())
+            } else {
+                NavigationLink(value: item) {
+                    MediaThumbnail(item: item, isSelected: false, isSelectionMode: false, hideOverlays: categoryType == .largeVideos, onTap: {})
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .opacity(isDeleting ? 0.5 : 1.0)
+        .animation(.default, value: isDeleting)
+    }
     var activeDisplayStyle: CategoryDisplayStyle {
         switch categoryType {
         case .screenshots, .videos:
@@ -109,11 +206,7 @@ struct CategoryDetailView: View {
         }
     }
     
-    let columns = [
-        GridItem(.flexible(), spacing: 8),
-        GridItem(.flexible(), spacing: 8),
-        GridItem(.flexible(), spacing: 8)
-    ]
+
     
     var allItemIDs: Set<String> {
         switch activeDisplayStyle {
@@ -171,32 +264,37 @@ struct CategoryDetailView: View {
                         }
                         switch activeDisplayStyle {
                         case .grid(let items):
-                            LazyVGrid(columns: columns, spacing: 8) {
-                                ForEach(items) { item in
-                                    Group {
-                                        if isSelectionMode {
-                                            Button(action: {
-                                                if !isDeleting {
-                                                    if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
-                                                    else { selectedItems.insert(item.id) }
-                                                }
-                                            }) {
-                                                MediaThumbnail(item: item, isSelected: selectedItems.contains(item.id), isSelectionMode: isSelectionMode, onTap: {})
+                            if let sections = dateSections {
+                                LazyVGrid(columns: columns, spacing: 8, pinnedViews: [.sectionHeaders]) {
+                                    ForEach(sections) { section in
+                                        Section(header: 
+                                            HStack {
+                                                Text(section.title)
+                                                    .font(.headline)
+                                                    .foregroundStyle(.primary)
+                                                Spacer()
                                             }
-                                            .buttonStyle(PlainButtonStyle())
-                                        } else {
-                                            NavigationLink(value: item) {
-                                                MediaThumbnail(item: item, isSelected: false, isSelectionMode: false, onTap: {})
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 0)
+                                            .background(Color(.systemBackground).opacity(0.95))
+                                        ) {
+                                            ForEach(section.items) { item in
+                                                itemGridCell(item: item)
                                             }
-                                            .buttonStyle(PlainButtonStyle())
                                         }
                                     }
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .opacity(isDeleting ? 0.5 : 1.0)
-                                    .animation(.default, value: isDeleting)
                                 }
+                                .padding(.horizontal, 16)
+                                .gesture(magnifyGesture)
+                            } else {
+                                LazyVGrid(columns: columns, spacing: 8) {
+                                    ForEach(items) { item in
+                                        itemGridCell(item: item)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .gesture(magnifyGesture)
                             }
-                            .padding(.horizontal, 16)
                             
                             
                         case .list(let items):
@@ -225,10 +323,10 @@ struct CategoryDetailView: View {
                                         
                                         Group {
                                             if isSelectionMode {
-                                                MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
+                                                MediaThumbnail(item: item, isSelected: false, isSelectionMode: false, hideOverlays: categoryType == .largeVideos, onTap: {})
                                             } else {
                                                 NavigationLink(value: item) {
-                                                    MediaThumbnail(item: item, isSelected: false, isSelectionMode: false) { }
+                                                    MediaThumbnail(item: item, isSelected: false, isSelectionMode: false, hideOverlays: categoryType == .largeVideos, onTap: {})
                                                 }
                                                 .buttonStyle(PlainButtonStyle())
                                             }
@@ -260,7 +358,7 @@ struct CategoryDetailView: View {
                                     }
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 16)
-                                    .background(Color(.secondarySystemGroupedBackground))
+                                    .background(Color(.secondarySystemBackground))
                                     .cornerRadius(12)
                                     .padding(.horizontal, 16)
                                     .opacity(isDeleting ? 0.5 : 1.0)
@@ -296,7 +394,7 @@ struct CategoryDetailView: View {
                                 
                                 SelectionToolbar(onSelectAll: {
                                     let targetIDs: Set<String>
-                                    if case .grouped(let groups) = activeDisplayStyle, categoryType != .similarPhotos {
+                                    if case .grouped(let groups) = activeDisplayStyle {
                                         let safeIDs = groups.flatMap { $0.items.dropFirst() }.map { $0.id }
                                         targetIDs = Set(safeIDs)
                                     } else {
@@ -335,24 +433,35 @@ struct CategoryDetailView: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem() {
                 if !isSelectionMode && itemsCount > 0 {
                     Button(action: { showSortSheet = true }) {
-                        Image(systemName: sortOption == .defaultOrder ? "arrow.up.arrow.down.circle" : "arrow.up.arrow.down.circle.fill")
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
                     }
+                    .accessibilityLabel("Sort photos")
                 }
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
+            
+            ToolbarSpacer(.fixed)
+            
+            ToolbarItem() {
                 if isSelectionMode {
-                    Button("Cancel") {
+                    Button(action: {
                         isSelectionMode = false
                         selectedItems.removeAll()
+                    }) {
+                        Text("Cancel")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 16)
                     }
                     .disabled(isDeleting)
                 } else {
-                    Button("Select") {
+                    Button(action: {
                         isSelectionMode = true
-                        if case .grouped(let groups) = activeDisplayStyle, categoryType != .similarPhotos {
+                        if case .grouped(let groups) = activeDisplayStyle {
                             for group in groups {
                                 let itemsToSelect = group.items.dropFirst()
                                 for item in itemsToSelect {
@@ -360,7 +469,13 @@ struct CategoryDetailView: View {
                                 }
                             }
                         }
+                    }) {
+                        Text("Select")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 16)
                     }
+                    .accessibilityLabel("Select photos")
                     .disabled(itemsCount == 0)
                 }
             }
@@ -383,7 +498,7 @@ struct CategoryDetailView: View {
             Text(deleteError ?? "")
         }
         .navigationDestination(for: MediaItem.self) { item in
-            MediaDetailView(item: item)
+            MediaDetailView(initialItem: item, allItems: allItemsList)
         }
         .sheet(isPresented: $showSortSheet) {
             MediaSortSheet(sortOption: $sortOption)

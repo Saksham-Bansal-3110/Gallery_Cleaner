@@ -79,14 +79,22 @@ struct HomeView: View {
                 
                 // What's Taking Space Card
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("What's Taking Space?")
-                        .font(.title3.bold())
-                        .foregroundStyle(.primary)
+                    HStack {
+                        Text("Storage Breakdown")
+                            .font(.title3.bold())
+                            .foregroundStyle(.primary)
+                        
+                        Spacer()
+                        
+                        Text(viewModel.formatSize(totalStorageSize))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
                     
                     StorageOverviewView(segments: chartSegments)
                 }
                 .padding(20)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color(.secondarySystemBackground))
                 .cornerRadius(20)
                 
                 // Categories
@@ -123,6 +131,10 @@ struct HomeView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 32)
         }
+    }
+    
+    var totalStorageSize: Int64 {
+        viewModel.categoryStatistics.reduce(0) { $0 + $1.totalSize }
     }
     
     var chartSegments: [ChartSegment] {

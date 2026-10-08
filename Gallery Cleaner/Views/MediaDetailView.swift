@@ -27,7 +27,7 @@ class MediaDetailViewModel: ObservableObject {
         if item.mediaType == .video {
             let options = PHVideoRequestOptions()
             options.isNetworkAccessAllowed = true
-            options.deliveryMode = .highQualityFormat
+            options.deliveryMode = .fastFormat
             
             PHImageManager.default().requestPlayerItem(forVideo: item.asset, options: options) { [weak self] playerItem, info in
                 DispatchQueue.main.async {
@@ -43,7 +43,7 @@ class MediaDetailViewModel: ObservableObject {
         } else {
             let options = PHImageRequestOptions()
             options.isNetworkAccessAllowed = true
-            options.deliveryMode = .highQualityFormat
+            options.deliveryMode = .opportunistic
             options.resizeMode = .fast
             
             imageRequestID = PHImageManager.default().requestImage(for: item.asset, targetSize: targetSize, contentMode: .aspectFit, options: options) { [weak self] img, info in
@@ -138,21 +138,21 @@ struct MediaInfoSheet: View {
     }
 }
 
-@MainActor struct MediaDetailView: View {
+@MainActor struct MediaDetailContentView: View {
     let item: MediaItem
-    @Environment(\.dismiss) var dismiss
+    let activeItemId: String
     @EnvironmentObject var galleryViewModel: GalleryViewModel
     
     @StateObject private var viewModel: MediaDetailViewModel
-    @State private var showDeleteConfirmation = false
-    @State private var showingInfo = false
     
     // Zoom state
     @State private var scale: CGFloat = 1.0
+    @State private var panOffset: CGSize = .zero
     
     @MainActor
-    init(item: MediaItem) {
+    init(item: MediaItem, activeItemId: String) {
         self.item = item
+        self.activeItemId = activeItemId
         _viewModel = StateObject(wrappedValue: MediaDetailViewModel(item: item))
     }
     
@@ -178,14 +178,31 @@ struct MediaInfoSheet: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(maxWidth: geometry.size.width, maxHeight: geometry.size.height)
                             .scaleEffect(scale)
+                            .offset(panOffset)
                             .gesture(
-                                MagnificationGesture()
+                                MagnifyGesture()
                                     .onChanged { value in
-                                        scale = max(1.0, value)
+                                        scale = max(1.0, value.magnification)
                                     }
                                     .onEnded { _ in
-                                        if scale < 1.0 {
-                                            withAnimation { scale = 1.0 }
+                                        if scale <= 1.0 {
+                                            withAnimation {
+                                                scale = 1.0
+                                                panOffset = .zero
+                                            }
+                                        }
+                                    }
+                            )
+                            .simultaneousGesture(
+                                DragGesture(minimumDistance: scale > 1.0 ? 0 : 10000)
+                                    .onChanged { value in
+                                        if scale > 1.0 {
+                                            panOffset = value.translation
+                                        }
+                                    }
+                                    .onEnded { _ in
+                                        if scale <= 1.0 {
+                                            withAnimation { panOffset = .zero }
                                         }
                                     }
                             )
@@ -200,32 +217,83 @@ struct MediaInfoSheet: View {
                 }
             }
             .task(id: item.id) {
-                // Calculate target size (screen size * scale)
                 let screenScale = UITraitCollection.current.displayScale
                 let targetSize = CGSize(width: geometry.size.width * screenScale, height: geometry.size.height * screenScale)
                 viewModel.loadMedia(targetSize: targetSize)
             }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    Button(action: { showingInfo = true }) {
-                        Image(systemName: "info.circle").foregroundStyle(.blue)
-                    }
-                    .accessibilityLabel("Media information")
-                    
-                    Button(action: { showDeleteConfirmation = true }) {
-                        Image(systemName: "trash").foregroundStyle(.red)
-                    }
-                    .accessibilityLabel("Delete media")
+            .onChange(of: activeItemId) { _, newId in
+                if newId != item.id {
+                    viewModel.player?.pause()
+                } else {
+                    let screenScale = UITraitCollection.current.displayScale
+                    let targetSize = CGSize(width: geometry.size.width * screenScale, height: geometry.size.height * screenScale)
+                    viewModel.loadMedia(targetSize: targetSize)
                 }
             }
         }
+        .onDisappear {
+            viewModel.cancelLoading()
+        }
+    }
+}
+
+@MainActor struct MediaDetailView: View {
+    let initialItem: MediaItem
+    let allItems: [MediaItem]
+    
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var galleryViewModel: GalleryViewModel
+    
+    @State private var currentItemId: String
+    @State private var showingInfo = false
+    @State private var showDeleteConfirmation = false
+    
+    init(initialItem: MediaItem, allItems: [MediaItem]) {
+        self.initialItem = initialItem
+        self.allItems = allItems
+        self._currentItemId = State(initialValue: initialItem.id)
+    }
+    
+    var currentItem: MediaItem? {
+        allItems.first { $0.id == currentItemId }
+    }
+    
+    var body: some View {
+        TabView(selection: $currentItemId) {
+            ForEach(allItems) { item in
+                MediaDetailContentView(item: item, activeItemId: currentItemId)
+                    .tag(item.id)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem() {
+                Button(action: { showingInfo = true }) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel(currentItem?.mediaType == .video ? "Video information" : "Photo information")
+            }
+            
+            ToolbarSpacer(.fixed)
+            
+            ToolbarItem() {
+                Button(action: { showDeleteConfirmation = true }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+                .accessibilityLabel(currentItem?.mediaType == .video ? "Delete video" : "Delete photo")
+            }
+        }
         .sheet(isPresented: $showingInfo) {
-            MediaInfoSheet(item: item)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+            if let item = currentItem {
+                MediaInfoSheet(item: item)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
         }
         .confirmationDialog("Delete Media?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { deleteItem() }
@@ -233,19 +301,18 @@ struct MediaInfoSheet: View {
         } message: {
             Text("This will move the item to Recently Deleted.")
         }
-        .onDisappear {
-            viewModel.cancelLoading()
-        }
     }
     
     private func deleteItem() {
+        guard let item = currentItem else { return }
         Task {
             do {
                 try await galleryViewModel.deleteItems(withIDs: [item.id])
-                dismiss()
+                dismiss() // Return to category since array bounds might shift
             } catch {
                 print("Failed to delete item: \(error)")
             }
         }
     }
 }
+

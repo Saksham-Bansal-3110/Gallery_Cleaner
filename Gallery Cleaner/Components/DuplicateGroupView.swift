@@ -21,44 +21,43 @@ struct DuplicateGroupView: View {
                 Spacer()
             }
             
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(group.items) { item in
-                        Group {
-                            if isSelectionMode {
-                                Button(action: {
-                                    if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
-                                    else { selectedItems.insert(item.id) }
-                                }) {
-                                    MediaThumbnail(
-                                        item: item,
-                                        isSelected: selectedItems.contains(item.id),
-                                        isSelectionMode: isSelectionMode,
-                                        isRecommended: group.recommendedItem?.id == item.id,
-                                        onTap: {}
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            } else {
-                                NavigationLink(value: item) {
-                                    MediaThumbnail(
-                                        item: item,
-                                        isSelected: false,
-                                        isSelectionMode: false,
-                                        isRecommended: group.recommendedItem?.id == item.id,
-                                        onTap: {}
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(group.items) { item in
+                    Group {
+                        if isSelectionMode {
+                            Button(action: {
+                                if selectedItems.contains(item.id) { selectedItems.remove(item.id) }
+                                else { selectedItems.insert(item.id) }
+                            }) {
+                                MediaThumbnail(
+                                    item: item,
+                                    isSelected: selectedItems.contains(item.id),
+                                    isSelectionMode: isSelectionMode,
+                                    isRecommended: group.recommendedItem?.id == item.id,
+                                    onTap: {}
+                                )
                             }
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            NavigationLink(value: item) {
+                                MediaThumbnail(
+                                    item: item,
+                                    isSelected: false,
+                                    isSelectionMode: false,
+                                    isRecommended: group.recommendedItem?.id == item.id,
+                                    onTap: {}
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .frame(width: 120, height: 120)
                     }
+                    .aspectRatio(1, contentMode: .fit)
                 }
             }
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
     }
     

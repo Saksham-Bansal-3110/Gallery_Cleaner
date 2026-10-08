@@ -1,8 +1,8 @@
 import Foundation
 import Vision
 
-public struct SimilarityConfiguration {
-    public static let shared = SimilarityConfiguration()
+public struct SimilarityConfiguration: Sendable {
+    public nonisolated static let shared = SimilarityConfiguration()
     
     // Versioning
     public let algorithmVersion: Int = 2
@@ -25,7 +25,7 @@ public struct SimilarityConfiguration {
     
     private init() {}
     
-    public var currentVisionRevision: Int {
+    public nonisolated var currentVisionRevision: Int {
         if #available(iOS 17.0, *) {
             return VNGenerateImageFeaturePrintRequestRevision2
         } else {

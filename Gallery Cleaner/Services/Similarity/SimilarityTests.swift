@@ -76,8 +76,8 @@ public struct SimilarityTests {
             let distance = test.0
             let expectedSimilar = test.1
             
-            let id1 = "A\\(idx)"
-            let id2 = "B\\(idx)"
+            let id1 = "A\(idx)"
+            let id2 = "B\(idx)"
             
             let scores = [
                 SimilarityScore(firstID: id1, secondID: id2, distance: distance, reasons: [.temporal])

@@ -8,7 +8,7 @@ public enum CandidateReason: String, Hashable, Sendable, CustomStringConvertible
     public var description: String { return self.rawValue }
 }
 
-public struct CandidatePair: Hashable, Sendable {
+public struct CandidatePair: Sendable {
     public let firstID: String
     public let secondID: String
     public var reasons: Set<CandidateReason>
@@ -24,14 +24,6 @@ public struct CandidatePair: Hashable, Sendable {
         self.reasons = [reason]
     }
     
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(firstID)
-        hasher.combine(secondID)
-    }
-    
-    public static func ==(lhs: CandidatePair, rhs: CandidatePair) -> Bool {
-        return lhs.firstID == rhs.firstID && lhs.secondID == rhs.secondID
-    }
 }
 
 public struct CandidateGeneratorDiagnostics {
@@ -62,7 +54,7 @@ public class CandidateGenerator {
         
         var candidatePairs = [CandidatePair: CandidatePair]()
         
-        let analysisDict = Dictionary(uniqueKeysWithValues: validAnalyses.map { ($0.localIdentifier, $0) })
+        _ = Dictionary(uniqueKeysWithValues: validAnalyses.map { ($0.localIdentifier, $0) })
         
         // 1. Path A: Temporal & Burst
         let sortedItems = validItems.sorted { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }
@@ -121,5 +113,15 @@ public class CandidateGenerator {
         }
         
         return Set(candidatePairs.values)
+    }
+}
+
+nonisolated extension CandidatePair: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(firstID)
+        hasher.combine(secondID)
+    }
+    public static func ==(lhs: CandidatePair, rhs: CandidatePair) -> Bool {
+        return lhs.firstID == rhs.firstID && lhs.secondID == rhs.secondID
     }
 }

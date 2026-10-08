@@ -8,7 +8,7 @@ public struct SimilarityScore: Sendable {
     public let reasons: Set<CandidateReason>
 }
 
-public struct SimilarityScorerDiagnostics: Sendable {
+@preconcurrency public struct SimilarityScorerDiagnostics: Sendable {
     public var scoredPairs: Int = 0
     public var allDistances: [Float] = []
     public var distanceBuckets: [String: Int] = [
@@ -17,25 +17,9 @@ public struct SimilarityScorerDiagnostics: Sendable {
         "10-12": 0, "12-15": 0, "15-20": 0, "20+": 0
     ]
     
-    public init() {}
+    nonisolated public init() {}
     
-    mutating func record(distance: Float) {
-        scoredPairs += 1
-        allDistances.append(distance)
-        
-        if distance < 1 { distanceBuckets["0-1", default: 0] += 1 }
-        else if distance < 2 { distanceBuckets["1-2", default: 0] += 1 }
-        else if distance < 3 { distanceBuckets["2-3", default: 0] += 1 }
-        else if distance < 4 { distanceBuckets["3-4", default: 0] += 1 }
-        else if distance < 5 { distanceBuckets["4-5", default: 0] += 1 }
-        else if distance < 6 { distanceBuckets["5-6", default: 0] += 1 }
-        else if distance < 8 { distanceBuckets["6-8", default: 0] += 1 }
-        else if distance < 10 { distanceBuckets["8-10", default: 0] += 1 }
-        else if distance < 12 { distanceBuckets["10-12", default: 0] += 1 }
-        else if distance < 15 { distanceBuckets["12-15", default: 0] += 1 }
-        else if distance < 20 { distanceBuckets["15-20", default: 0] += 1 }
-        else { distanceBuckets["20+", default: 0] += 1 }
-    }
+
     
     public func percentile(_ p: Float) -> Float {
         guard !allDistances.isEmpty else { return 0 }
@@ -68,7 +52,20 @@ public actor SimilarityScorer {
                 if distance > 0.05 {
                     scores.append(SimilarityScore(firstID: pair.firstID, secondID: pair.secondID, distance: distance, reasons: pair.reasons))
                     var d = diagnostics
-d.record(distance: distance)
+d.scoredPairs += 1
+                    d.allDistances.append(distance)
+                    if distance < 1 { d.distanceBuckets["0-1", default: 0] += 1 }
+                    else if distance < 2 { d.distanceBuckets["1-2", default: 0] += 1 }
+                    else if distance < 3 { d.distanceBuckets["2-3", default: 0] += 1 }
+                    else if distance < 4 { d.distanceBuckets["3-4", default: 0] += 1 }
+                    else if distance < 5 { d.distanceBuckets["4-5", default: 0] += 1 }
+                    else if distance < 6 { d.distanceBuckets["5-6", default: 0] += 1 }
+                    else if distance < 8 { d.distanceBuckets["6-8", default: 0] += 1 }
+                    else if distance < 10 { d.distanceBuckets["8-10", default: 0] += 1 }
+                    else if distance < 12 { d.distanceBuckets["10-12", default: 0] += 1 }
+                    else if distance < 15 { d.distanceBuckets["12-15", default: 0] += 1 }
+                    else if distance < 20 { d.distanceBuckets["15-20", default: 0] += 1 }
+                    else { d.distanceBuckets["20+", default: 0] += 1 }
 diagnostics = d
                 }
             } catch {

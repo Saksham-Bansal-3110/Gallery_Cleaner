@@ -52,17 +52,22 @@ public class SimilarPhotoScanner: SimilarPhotoScanning {
             let groupItems = clusterIDs.compactMap { itemDict[$0] }
             if groupItems.count >= 2 {
                 // Determine group title
-                var title = "Similar \\(index + 1)"
+                var title = "Similar \(index + 1)"
                 if let first = groupItems.first?.filename {
                     title = first + " (Similar)"
                 }
                 
                 let rankingResult = await rankingService.rank(items: groupItems)
                 
+                var orderedItems = groupItems
+                let recommended = rankingResult.recommended
+                orderedItems.removeAll { $0.id == recommended.id }
+                orderedItems.insert(recommended, at: 0)
+                
                 let group = DuplicateGroup(
                     id: UUID().uuidString,
                     title: title,
-                    items: groupItems,
+                    items: orderedItems,
                     recommendedItem: rankingResult.recommended,
                     rankedItems: rankingResult.rankedItems
                 )

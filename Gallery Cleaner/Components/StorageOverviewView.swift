@@ -7,6 +7,7 @@ import SwiftUI
 
 struct StorageOverviewView: View {
     let segments: [ChartSegment]
+    @State private var animationProgress: CGFloat = 0.0
     
     var totalSize: Double {
         segments.reduce(0) { $0 + $1.value }
@@ -31,6 +32,11 @@ struct StorageOverviewView: View {
                     }
                 }
                 .frame(height: 12)
+                .mask(
+                    Rectangle()
+                        .frame(width: geometry.size.width * animationProgress)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                )
                 .cornerRadius(6)
             }
             .frame(height: 12)
@@ -58,6 +64,11 @@ struct StorageOverviewView: View {
                         }
                     }
                 }
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.2)) {
+                animationProgress = 1.0
             }
         }
     }

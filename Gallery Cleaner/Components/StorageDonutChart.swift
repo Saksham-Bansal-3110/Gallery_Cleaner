@@ -140,7 +140,7 @@ struct StorageDonutChartView: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 24)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(20)
     }
 }
